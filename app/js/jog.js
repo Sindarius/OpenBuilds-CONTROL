@@ -1,7 +1,7 @@
 var allowContinuousJog = false;
 var continuousJogRunning = false;
 var jogdist = 10;
-var jogDistZ = 1;
+var jogDistZ = 10;
 var safeToUpdateSliders = true;
 
 
@@ -43,13 +43,16 @@ function mmMode() {
     $('#distz01label').html('0.1mm');
     $('#distz1label').html('1mm');
     $('#distz10label').html('10mm');
-    switch(jogDistZ){
+    switch (jogDistZ) {
         case 0.254:
-            jogDistZ = 0.1; break;
+            jogDistZ = 0.1;
+            break;
         case 2.54:
-            jogDistZ = 1; break;
+            jogDistZ = 1;
+            break;
         case 25.4:
-            jogDistZ = 10; break;
+            jogDistZ = 10;
+            break;
     }
 
     $('#jogratemmdiv').show()
@@ -80,13 +83,16 @@ function inMode() {
     $('#distz01label').html('0.1"');
     $('#distz1label').html('1"');
     $('#distz10label').html('10"');
-    switch(jogDistZ){
+    switch (jogDistZ) {
         case 0.1:
-            jogDistZ = 0.254; break;
+            jogDistZ = 0.254;
+            break;
         case 1:
-            jogDistZ = 2.54; break;
+            jogDistZ = 2.54;
+            break;
         case 10:
-            jogDistZ = 25.4; break;
+            jogDistZ = 25.4;
+            break;
     }
 
     $('#jogratemmdiv').hide()
@@ -107,10 +113,12 @@ $(document).ready(function() {
             $('#jogTypeContinuous').prop('checked', true)
             allowContinuousJog = true;
             $('.distbtn').hide()
+            $('.distzbtn').hide()
         } else {
             $('#jogTypeContinuous').prop('checked', false)
             allowContinuousJog = false;
             $('.distbtn').show();
+            $('.distzbtn').show();
         }
     }
 
@@ -326,15 +334,14 @@ $(document).ready(function() {
         $('#dist500label').removeClass('fg-gray')
         $('#dist500label').addClass('fg-openbuilds')
     })
-    
+
     $('#distz01').on('click', function(ev) {
-        if(unit == "mm"){
+        if (unit == "mm") {
             jogDistZ = 0.1;
-        }
-        else if(unit == "in"){
+        } else if (unit == "in") {
             jogDistZ = 0.254;
         }
-        $('.distbtnz').removeClass('bd-openbuilds')
+        $('.distzbtn').removeClass('bd-openbuilds')
         $('#distz01').addClass('bd-openbuilds')
         $('.jogdistz').removeClass('fg-openbuilds')
         $('.jogdistz').addClass('fg-gray')
@@ -343,13 +350,12 @@ $(document).ready(function() {
     });
 
     $('#distz1').on('click', function(ev) {
-        if(unit == "mm"){
+        if (unit == "mm") {
             jogDistZ = 1;
-        }
-        else if(unit == "in"){
+        } else if (unit == "in") {
             jogDistZ = 2.54;
         }
-        $('.distbtnz').removeClass('bd-openbuilds')
+        $('.distzbtn').removeClass('bd-openbuilds')
         $('#distz1').addClass('bd-openbuilds')
         $('.jogdistz').removeClass('fg-openbuilds')
         $('.jogdistz').addClass('fg-gray')
@@ -357,13 +363,12 @@ $(document).ready(function() {
         $('#distz1label').addClass('fg-openbuilds')
     });
     $('#distz10').on('click', function(ev) {
-        if(unit == "mm"){
+        if (unit == "mm") {
             jogDistZ = 10;
-        }
-        else if(unit == "in"){
+        } else if (unit == "in") {
             jogDistZ = 25.4;
         }
-        $('.distbtnz').removeClass('bd-openbuilds')
+        $('.distzbtn').removeClass('bd-openbuilds')
         $('#distz10').addClass('bd-openbuilds')
         $('.jogdistz').removeClass('fg-openbuilds')
         $('.jogdistz').addClass('fg-gray')
@@ -642,7 +647,7 @@ $(document).ready(function() {
             $('.zM').click();
         } else {
             var feedrate = $('#jograte').val();
-            jog('Z', '-' + jogdistz, feedrate);
+            jog('Z', '-' + jogDistZ, feedrate);
         }
         $('#runNewProbeBtn').addClass("disabled")
         $('#confirmNewProbeBtn').removeClass("disabled")
@@ -676,7 +681,7 @@ $(document).ready(function() {
             $('.zP').click();
         } else {
             var feedrate = $('#jograte').val();
-            jog('Z', jogdistz, feedrate);
+            jog('Z', jogDistZ, feedrate);
         }
         $('#runNewProbeBtn').addClass("disabled")
         $('#confirmNewProbeBtn').removeClass("disabled")
@@ -792,6 +797,56 @@ function changeStepSize(dir) {
     }
 
 }
+
+function changeStepZSize(dir) {
+    if (jogDistZ == 0.1 || jogDistZ == 0.254) {
+        if (dir == 1) {
+            jogDistZ = 1;
+            $('.distbtn').removeClass('bd-openbuilds')
+            $('#distz1').addClass('bd-openbuilds')
+            $('.jogdist').removeClass('fg-openbuilds')
+            $('.jogdist').addClass('fg-gray')
+            $('#distz1label').removeClass('fg-gray')
+            $('#distz1label').addClass('fg-openbuilds')
+        }
+        if (dir == -1) {
+            // do nothing
+        }
+    } else if (jogDistZ == 1 || jogDistZ == 2.54) {
+        if (dir == 1) {
+            jogDistZ = 10;
+            $('.distbtn').removeClass('bd-openbuilds')
+            $('#distz10').addClass('bd-openbuilds')
+            $('.jogdist').removeClass('fg-openbuilds')
+            $('.jogdist').addClass('fg-gray')
+            $('#distz10label').removeClass('fg-gray')
+            $('#distz10label').addClass('fg-openbuilds')
+        }
+        if (dir == -1) {
+            jogDistZ = 0.1;
+            $('.distbtn').removeClass('bd-openbuilds')
+            $('#distz01').addClass('bd-openbuilds')
+            $('.jogdist').removeClass('fg-openbuilds')
+            $('.jogdist').addClass('fg-gray')
+            $('#distz01label').removeClass('fg-gray')
+            $('#distz01label').addClass('fg-openbuilds')
+        }
+    } else if (jogDistZ == 10 || jogDistZ == 25.4) {
+        if (dir == 1) {
+            //Do Nothing
+        }
+        if (dir == -1) {
+            jogDistZ = 1;
+            $('.distbtn').removeClass('bd-openbuilds')
+            $('#distz1').addClass('bd-openbuilds')
+            $('.jogdist').removeClass('fg-openbuilds')
+            $('.jogdist').addClass('fg-gray')
+            $('#distz1label').removeClass('fg-gray')
+            $('#distz1label').addClass('fg-openbuilds')
+        }
+    }
+}
+
 
 function jog(dir, dist, feed = null) {
     if (feed) {
