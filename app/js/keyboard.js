@@ -210,7 +210,7 @@ function bindKeys() {
             });
         }
         if (keyboardShortcuts.stepZM.length) {
-            $(document).bind('keydown', keyboardShortcuts.stepM, function(e) {
+            $(document).bind('keydown', keyboardShortcuts.stepZM, function(e) {
                 e.preventDefault();
                 $('#jogTypeContinuous').prop('checked', false)
                 allowContinuousJog = false;
@@ -219,7 +219,7 @@ function bindKeys() {
             });
         }
         if (keyboardShortcuts.stepZP.length) {
-            $(document).bind('keydown', keyboardShortcuts.stepP, function(e) {
+            $(document).bind('keydown', keyboardShortcuts.stepZP, function(e) {
                 e.preventDefault();
                 $('#jogTypeContinuous').prop('checked', false)
                 allowContinuousJog = false;
