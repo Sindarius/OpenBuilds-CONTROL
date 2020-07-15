@@ -799,13 +799,14 @@ function changeStepSize(dir) {
 }
 
 function changeStepZSize(dir) {
+    console.log("ChangeStepZ " + dir);
     if (jogDistZ == 0.1 || jogDistZ == 0.254) {
         if (dir == 1) {
             jogDistZ = 1;
-            $('.distbtn').removeClass('bd-openbuilds')
+            $('.distzbtn').removeClass('bd-openbuilds')
             $('#distz1').addClass('bd-openbuilds')
-            $('.jogdist').removeClass('fg-openbuilds')
-            $('.jogdist').addClass('fg-gray')
+            $('.jogdistz').removeClass('fg-openbuilds')
+            $('.jogdistz').addClass('fg-gray')
             $('#distz1label').removeClass('fg-gray')
             $('#distz1label').addClass('fg-openbuilds')
         }
@@ -815,19 +816,19 @@ function changeStepZSize(dir) {
     } else if (jogDistZ == 1 || jogDistZ == 2.54) {
         if (dir == 1) {
             jogDistZ = 10;
-            $('.distbtn').removeClass('bd-openbuilds')
+            $('.distzbtn').removeClass('bd-openbuilds')
             $('#distz10').addClass('bd-openbuilds')
-            $('.jogdist').removeClass('fg-openbuilds')
-            $('.jogdist').addClass('fg-gray')
+            $('.jogdistz').removeClass('fg-openbuilds')
+            $('.jogdistz').addClass('fg-gray')
             $('#distz10label').removeClass('fg-gray')
             $('#distz10label').addClass('fg-openbuilds')
         }
         if (dir == -1) {
             jogDistZ = 0.1;
-            $('.distbtn').removeClass('bd-openbuilds')
+            $('.distzbtn').removeClass('bd-openbuilds')
             $('#distz01').addClass('bd-openbuilds')
-            $('.jogdist').removeClass('fg-openbuilds')
-            $('.jogdist').addClass('fg-gray')
+            $('.jogdistz').removeClass('fg-openbuilds')
+            $('.jogdistz').addClass('fg-gray')
             $('#distz01label').removeClass('fg-gray')
             $('#distz01label').addClass('fg-openbuilds')
         }
@@ -837,10 +838,10 @@ function changeStepZSize(dir) {
         }
         if (dir == -1) {
             jogDistZ = 1;
-            $('.distbtn').removeClass('bd-openbuilds')
+            $('.distzbtn').removeClass('bd-openbuilds')
             $('#distz1').addClass('bd-openbuilds')
-            $('.jogdist').removeClass('fg-openbuilds')
-            $('.jogdist').addClass('fg-gray')
+            $('.jogdistz').removeClass('fg-openbuilds')
+            $('.jogdistz').addClass('fg-gray')
             $('#distz1label').removeClass('fg-gray')
             $('#distz1label').addClass('fg-openbuilds')
         }
