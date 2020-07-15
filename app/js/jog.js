@@ -127,10 +127,12 @@ $(document).ready(function() {
             localStorage.setItem('continuousJog', true);
             allowContinuousJog = true;
             $('.distbtn').hide();
+            $('.distzbtn').hide();
         } else {
             localStorage.setItem('continuousJog', false);
             allowContinuousJog = false;
             $('.distbtn').show();
+            $('.distzbtn').show();
         }
         // console.log(document.activeElement)
         document.activeElement.blur();
