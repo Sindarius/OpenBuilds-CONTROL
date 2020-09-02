@@ -1,5 +1,9 @@
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = '1';
 
+process.on('uncaughtException', function(err) {
+  console.log(err);
+})
+
 // To see console.log output run with `DEBUGCONTROL=true electron .` or set environment variable for DEBUGCONTROL=true
 // debug_log debug overhead
 DEBUG = false;
@@ -597,13 +601,6 @@ io.on("connection", function(socket) {
       shell
     } = require('electron')
     shell.openExternal('https://openbuilds.com/threads/openbuilds-control-software.13121/')
-  });
-
-  socket.on("opendriverspage", function(data) {
-    const {
-      shell
-    } = require('electron')
-    shell.openExternal('https://docs.openbuilds.com/blackbox/#41-devicedrivers.html')
   });
 
   socket.on("minimisetotray", function(data) {
@@ -2240,7 +2237,10 @@ if (isElectron()) {
         title: "OpenBuilds CONTROL ",
         frame: false,
         autoHideMenuBar: true,
-        icon: '/app/favicon.png',
+        //icon: '/app/favicon.png',
+        icon: nativeImage.createFromPath(
+          path.join(__dirname, "/app/favicon.png")
+        ),
         webgl: true,
         experimentalFeatures: true,
         experimentalCanvasFeatures: true,
@@ -2251,7 +2251,7 @@ if (isElectron()) {
       var ipaddr = ip.address();
       // jogWindow.loadURL(`//` + ipaddr + `:3000/`)
       jogWindow.loadURL("http://localhost:3000/");
-      // jogWindow.webContents.openDevTools()
+      //jogWindow.webContents.openDevTools()
 
       jogWindow.on('close', function(event) {
         if (!forceQuit) {
@@ -2324,10 +2324,10 @@ if (isElectron()) {
 } else {
   var isPi = require('detect-rpi');
   if (isPi()) {
+    DEBUG = true;
     debug_log('Running on Raspberry Pi!');
     status.driver.operatingsystem = 'rpi'
     startChrome();
-    status.driver.operatingsystem = 'raspberrypi';
   } else {
     debug_log("Running under NodeJS...");
   }
@@ -2444,7 +2444,7 @@ function startChrome() {
     const chrome = spawn('chromium-browser', ['-app=http://127.0.0.1:3000']);
     chrome.on('close', (code) => {
       debug_log(`Chromium process exited with code ${code}`);
-      debug_log(`If you want to continue using OpenBuildsCONTROL, please open Chromium Browser to http://` + ip.address() + `:3000`);
+      process.exit(0);
     });
   } else {
     debug_log('Not a Raspberry Pi. Please use Electron Instead');
