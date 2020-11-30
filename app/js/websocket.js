@@ -10,6 +10,8 @@ var simstopped = false;
 var bellstate = false;
 var toast = Metro.toast.create;
 var unit = "mm"
+var waitingForStatus = false;
+var openDialogs = [];
 
 $(document).ready(function() {
   initSocket();
@@ -64,6 +66,7 @@ function initSocket() {
   printLog("<span class='fg-red'>[ Websocket ] </span><span class='fg-green'>Bidirectional Websocket Interface Started</span>")
   setTimeout(function() {
     populatePortsMenu();
+    populateDrivesMenu();
   }, 2000);
 
   socket.on('disconnect', function() {
@@ -226,7 +229,7 @@ function initSocket() {
     console.log(data)
     printLog("<span class='fg-red'>[ ALARM ]</span>  <span class='fg-red'>" + data + "</span>")
 
-    Metro.dialog.create({
+    var dialog = Metro.dialog.create({
       clsDialog: 'dark',
       title: "<i class='fas fa-exclamation-triangle'></i> Grbl Alarm:",
       content: "<i class='fas fa-exclamation-triangle fg-red'></i>  " + data,
@@ -246,6 +249,7 @@ function initSocket() {
         }
       ]
     });
+    openDialogs.push(dialog);
     setTimeout(function() {
       $(".closeAlarmBtn").focus();
     }, 200, )
@@ -256,7 +260,7 @@ function initSocket() {
     console.log(data)
     printLog("<span class='fg-red'>[ ERROR ]</span>  <span class='fg-red'>" + data + "</span>")
 
-    Metro.dialog.create({
+    var dialog = Metro.dialog.create({
       title: "<i class='fas fa-exclamation-triangle'></i> Grbl Error:",
       content: "<i class='fas fa-exclamation-triangle fg-red'></i>  " + data,
       clsDialog: 'dark',
@@ -268,12 +272,21 @@ function initSocket() {
         }
       }]
     });
+    openDialogs.push(dialog);
     setTimeout(function() {
       $(".closeErrorBtn").focus();
     }, 200, )
     //
   });
 
+  socket.on("errorsCleared", function(data) {
+    if (data) {
+      for (i = 0; i < openDialogs.length; i++) {
+        Metro.dialog.close(openDialogs[i]);
+      }
+      openDialogs.length = 0;
+    }
+  })
 
   socket.on('progStatus', function(data) {
     $('#controlTab').click();
@@ -289,6 +302,18 @@ function initSocket() {
       string = string.replace('[31mflash complete.[39m', "<span class='fg-red'><i class='fas fa-times fa-fw fg-red fa-fw'> </i> FLASH FAILED!</span> ");
       string = string.replace('[32m', "<span class='fg-green'><i class='fas fa-check fa-fw fg-green fa-fw'></i> ");
       string = string.replace('[39m', "</span>");
+      if (string.indexOf("Hash of data verified") != -1) {
+        string = "<span class='fg-green'><i class='fas fa-check fa-fw fg-green fa-fw'></i>" + string + "</span>"
+      }
+      if (string.indexOf("could not open port") != -1) {
+        string = "<span class='fg-red'><i class='fas fa-times fa-fw fg-red fa-fw'></i>" + string + "</span>"
+      }
+      if (string.indexOf("something went wrong") != -1) {
+        string = "<span class='fg-red'><i class='fas fa-times fa-fw fg-red fa-fw'></i>" + string + "</span>"
+      }
+      if (string.indexOf("fatal error occurred") != -1) {
+        string = "<span class='fg-red'><i class='fas fa-times fa-fw fg-red fa-fw'></i>" + string + "</span>"
+      }
       printLog("<span class='fg-red'>[ Firmware Upgrade ] </span>" + string)
 
       // $('#sendCommand').click();
@@ -321,6 +346,19 @@ function initSocket() {
         laststatus.comms.interfaces.ports = status.comms.interfaces.ports;
         populatePortsMenu();
       }
+
+      if (!_.isEqual(status.interface.diskdrives, laststatus.interface.diskdrives)) {
+        var string = "Detected a change in available disk drives: ";
+        for (i = 0; i < status.interface.diskdrives.length; i++) {
+          if (status.interface.diskdrives[i].isUSB || !status.interface.diskdrives[i].isSystem) {
+            string += "[" + status.interface.diskdrives[i].mountpoints[0].path + "], "
+          }
+        }
+        printLog(string)
+        laststatus.interface.diskdrives = status.interface.diskdrives;
+        populateDrivesMenu();
+      }
+
     }
 
     $('#runStatus').html("Controller: " + status.comms.runStatus);
@@ -493,6 +531,7 @@ function initSocket() {
     }
 
     laststatus = status;
+    waitingForStatus = false;
   });
 
   socket.on('features', function(data) {
@@ -623,6 +662,38 @@ function closePort() {
   socket.emit('closePort', 1);
   populatePortsMenu();
   $('.mdata').val('');
+}
+
+function populateDrivesMenu() {
+  if (laststatus) {
+    var response = `<select id="select1" data-role="select" class="mt-4"><optgroup label="USB Flashdrives">`
+
+    var usbDrives = []
+
+    for (i = 0; i < laststatus.interface.diskdrives.length; i++) {
+      if (laststatus.interface.diskdrives[i].isUSB || !laststatus.interface.diskdrives[i].isSystem) {
+        usbDrives.push(laststatus.interface.diskdrives[i])
+      }
+    };
+
+    if (!usbDrives.length > 0) {
+      response += `<option value="">Waiting for USB Flashdrive</option>`
+    } else {
+      for (i = 0; i < usbDrives.length; i++) {
+        response += `<option value="` + usbDrives[i].mountpoints[0].path + `">` + usbDrives[i].mountpoints[0].path + ` ` + usbDrives[i].description + `</option>`;
+      };
+    }
+    response += `</optgroup></select>`
+    var select = $("#UsbDriveList").data("select");
+    select.data(response);
+    if (!usbDrives.length > 0) {
+      $('#UsbDriveList').parent(".select").addClass('disabled')
+      $("#copyToUsbBtn").attr('disabled', true);
+    } else {
+      $('#UsbDriveList').parent(".select").removeClass('disabled')
+      $("#copyToUsbBtn").attr('disabled', false);
+    }
+  }
 }
 
 function populatePortsMenu() {

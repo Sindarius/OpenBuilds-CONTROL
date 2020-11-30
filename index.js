@@ -43,8 +43,34 @@ var fs = require('fs');
 var path = require("path");
 const join = require('path').join;
 var mkdirp = require('mkdirp');
+const drivelist = require('drivelist');
+require('hazardous');
 
 app.use(express.static(path.join(__dirname, "app")));
+
+// Interface firmware flash
+app.post('/uploadCustomFirmware', (req, res) => {
+  // 'firmwareBin' is the name of our file input field in the HTML form
+  let upload = multer({
+    storage: storage
+  }).single('firmwareBin');
+
+  upload(req, res, function(err) {
+    // req.file contains information of uploaded file
+    // req.body contains information of text fields, if there were any
+
+    if (err instanceof multer.MulterError) {
+      return res.send(err);
+    } else if (err) {
+      return res.send(err);
+    }
+
+    // Display uploaded image for user validation
+    firmwareImagePath = req.file.path;
+    res.send(`Using ` + req.file.path);
+  });
+});
+// end Interface Firmware flash
 
 
 //Note when renewing Convert zerossl cert first `openssl.exe rsa -in domain-key.key -out domain-key.key`
@@ -74,7 +100,6 @@ const Readline = SerialPort.parsers.Readline;
 var md5 = require('md5');
 var ip = require("ip");
 var _ = require('lodash');
-var fs = require("fs");
 var formidable = require('formidable')
 var lastsentuploadprogress = 0;
 
@@ -104,6 +129,7 @@ var appIcon = null,
   jogWindow = null,
   mainWindow = null
 var autoUpdater
+
 
 var updateIsDownloading = false;
 if (isElectron()) {
@@ -368,6 +394,13 @@ var status = {
       activePort: "" // or activeIP in the case of wifi/telnet?
     },
     alarm: ""
+  },
+  interface: {
+    diskdrives: [],
+      firmware: {
+        availVersion: "",
+        downloadedVersion: ""
+      }
   }
 };
 
@@ -378,8 +411,6 @@ async function findPorts() {
   // console.log(ports)
   oldportslist = ports;
   status.comms.interfaces.ports = ports;
-  for (const port of ports) {}
-  // throw new Error('No ports found')
 }
 findPorts()
 
@@ -399,25 +430,25 @@ async function findChangedPorts() {
   }
   oldportslist = ports;
   // throw new Error('No ports found')
+  findPorts()
 }
-findPorts()
 
-
-// SerialPort.list(function(err, ports) {
-//   oldportslist = ports;
-//   status.comms.interfaces.ports = ports;
-// });
+async function findDisks() {
+  const drives = await drivelist.list();
+  status.interface.diskdrives = drives;
+}
 
 var PortCheckinterval = setInterval(function() {
   if (status.comms.connectionStatus == 0) {
     findChangedPorts();
   }
-}, 500);
+  findDisks();
+}, 1000);
 
 checkPowerSettings()
-var PowerSettingsInterval = setInterval(function() {
-  checkPowerSettings()
-}, 60 * 1000)
+// var PowerSettingsInterval = setInterval(function() {
+//   checkPowerSettings()
+// }, 60 * 1000)
 
 
 // JSON API
@@ -578,7 +609,7 @@ io.on("connection", function(socket) {
     //     jogWindow.setOverlayIcon(nativeImage.createFromPath(iconAlarm), 'Alarm');
     //   }
     // }
-  }, 400);
+  }, 50);
 
 
 
@@ -638,11 +669,24 @@ io.on("connection", function(socket) {
   })
 
 
+
+
+
+
+  //download(url, dest, cb)
+
   socket.on("flashGrbl", function(data) {
 
     var port = data.port;
     var file = data.file;
     var board = data.board
+    var customImg = data.customImg
+    if (customImg) {
+      var firmwarePath = firmwareImagePath
+    } else {
+      var firmwarePath = path.join(__dirname, file)
+    }
+
     const Avrgirl = require('avrgirl-arduino');
 
     if (status.comms.connectionStatus > 0) {
@@ -674,7 +718,7 @@ io.on("connection", function(socket) {
       debug_log(JSON.stringify(avrgirl));
 
       status.comms.connectionStatus = 6;
-      avrgirl.flash(path.join(__dirname, file), function(error) {
+      avrgirl.flash(firmwarePath, function(error) {
         if (error) {
           console.error(error);
           io.sockets.emit("progStatus", 'Flashing FAILED!');
@@ -690,6 +734,65 @@ io.on("connection", function(socket) {
     }, 1000)
   })
 
+  socket.on("flashInterface", function(data) {
+    if (status.comms.connectionStatus > 0) {
+      debug_log('WARN: Closing Port ' + port);
+      stopPort();
+    } else {
+      debug_log('ERROR: Machine connection not open!');
+    }
+    flashInterface(data)
+  })
+
+  socket.on("writeInterfaceUsbDrive", function(data) {
+    //data = mountpoint dest
+    var ncp = require('ncp').ncp;
+    ncp.limit = 16;
+
+    var output = {
+      'command': 'Interface USB Drive',
+      'response': "Starting to copy data to " + data
+    }
+    io.sockets.emit('data', output);
+
+    var errorCount = 0;
+
+    var src = path.join(__dirname, './app/wizards/interface/PROBE/');
+    var dest = path.join(data, "/PROBE/");
+
+    ncp(src, dest,
+      function(err) {
+        if (err) {
+          var output = {
+            'command': 'Interface USB Drive',
+            'response': "Failed to copy PROBE macros to " + dest + ":  " + JSON.stringify(err)
+          }
+          io.sockets.emit('data', output);
+          errorCount++
+        } else {
+          var output = {
+            'command': 'Interface USB Drive',
+            'response': "Copied PROBE macros to " + dest + " succesfully!"
+          }
+          io.sockets.emit('data', output);
+        }
+      });
+
+    setTimeout(function() {
+      if (errorCount == 0) {
+        var output = {
+          'command': 'Interface USB Drive',
+          'response': "Finished copying supporting files to Drive " + data
+        }
+        io.sockets.emit('data', output);
+        var output = {
+          'command': 'Interface USB Drive',
+          'response': "Please Eject the drive (Safely Remove) and insert it into your Interface's USB port"
+        }
+        io.sockets.emit('data', output);
+      }
+    }, 1000);
+  });
 
   socket.on("connectTo", function(data) { // If a user picks a port to connect to, open a Node SerialPort Instance to it
 
@@ -972,13 +1075,15 @@ io.on("connection", function(socket) {
           debug_log("GRBL detected");
           setTimeout(function() {
             io.sockets.emit('grbl')
+            io.sockets.emit('errorsCleared', true);
           }, 600)
           // Start interval for status queries
+          clearInterval(statusLoop);
           statusLoop = setInterval(function() {
             if (status.comms.connectionStatus > 0) {
               addQRealtime("?");
             }
-          }, 250);
+          }, 100);
         } else if (data.indexOf("LPC176") >= 0) { // LPC1768 or LPC1769 should be Smoothieware
           status.comms.blocked = false;
           debug_log("Smoothieware detected");
@@ -1574,6 +1679,7 @@ io.on("connection", function(socket) {
       }
       status.comms.runStatus = 'Stopped'
       status.comms.connectionStatus = 2;
+      io.sockets.emit('errorsCleared', true);
     } else {
       debug_log('ERROR: Machine connection not open!');
     }
@@ -2334,28 +2440,36 @@ if (isElectron()) {
 }
 
 
-function stop(jog) {
+function stop(data) {
+  //data = { stop: false, jog: false, abort: true}
   if (status.comms.connectionStatus > 0) {
     status.comms.paused = true;
     debug_log('STOP');
     switch (status.machine.firmware.type) {
       case 'grbl':
-        if (jog) {
+
+        if (data.jog) {
           addQRealtime(String.fromCharCode(0x85)); // canceljog
           debug_log('Sent: 0x85 Jog Cancel');
           debug_log(queuePointer, gcodeQueue)
-        } else {
+        }
+
+        if (!data.abort && !data.jog) { // pause motion first.
           addQRealtime('!'); // hold
           debug_log('Sent: !');
         }
+
         if (status.machine.firmware.version === '1.1d') {
           addQRealtime(String.fromCharCode(0x9E)); // Stop Spindle/Laser
           debug_log('Sent: Code(0x9E)');
         }
+
         debug_log('Cleaning Queue');
-        if (!jog) {
-          addQRealtime(String.fromCharCode(0x18)); // ctrl-x
-          debug_log('Sent: Code(0x18)');
+        if (!data.jog) {
+          setTimeout(function() {
+            addQRealtime(String.fromCharCode(0x18)); // ctrl-x
+            debug_log('Sent: Code(0x18)');
+          }, 200);
         }
         status.comms.connectionStatus = 2;
         break;
@@ -2450,5 +2564,150 @@ function startChrome() {
     debug_log('Not a Raspberry Pi. Please use Electron Instead');
   }
 }
+
+// Interface Programming
+
+
+// grab latest firmware.bin for Interface on startup
+
+var file = fs.createWriteStream(path.join(__dirname, "firmware.bin"));
+https.get("https://raw.githubusercontent.com/OpenBuilds/firmware/main/interface/firmware.bin", function(response) {
+  response.pipe(file);
+  file.on('finish', function() {
+    file.close(function() {
+
+      const options = {
+        hostname: 'raw.githubusercontent.com',
+        port: 443,
+        path: '/OpenBuilds/firmware/main/interface/version.txt',
+        method: 'GET'
+      }
+
+      const req = https.request(options, res => {
+        console.log(`statusCode: ${res.statusCode}`)
+
+        res.on('data', d => {
+          status.interface.firmware.availVersion = parseFloat(d.toString())
+
+          var output = {
+            'command': 'interface firmware update tool',
+            'response': "Downloaded firmware.bin v" + status.interface.firmware.availVersion
+          }
+          io.sockets.emit('data', output);
+
+        })
+      })
+
+      req.on('error', error => {
+        var output = {
+          'command': 'interface firmware update tool',
+          'response': "Unable to download latest firmware.bin"
+        }
+        io.sockets.emit('data', output);
+      })
+
+      req.end()
+
+
+    });
+  });
+})
+
+
+
+var firmwareImagePath = path.join(__dirname, './firmware.bin');
+var spawn = require('child_process').spawn;
+const multer = require('multer');
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  // By default, multer removes file extensions so let's add them back
+  filename: function(req, file, cb) {
+    cb(null, file.fieldname + '-' + new Date().toJSON().replace(new RegExp(':', 'g'), '.') + path.extname(file.originalname));
+  }
+});
+
+function flashInterface(data) {
+  status.comms.connectionStatus = 6;
+
+  var port = data.port;
+  var file = data.file;
+  var board = data.board
+
+
+  console.log("Flashing Interface on " + port + " with board " + board + " file: " + file)
+  // var data = {
+  //   'port': port,
+  //   'string': debugString
+  // }
+  // io.sockets.emit("progStatus", data);
+  //
+
+  //for (let i = 0; i < ports.length; i++) {
+
+  var data = {
+    'port': port,
+    'string': "[Starting...]"
+  }
+  io.sockets.emit("progStatus", data);
+
+  var esptool_opts = [
+    '--chip', 'esp32',
+    '--port', port,
+    '--baud', '921600',
+    '--before', 'default_reset',
+    '--after', 'hard_reset',
+    'write_flash',
+    '-z',
+    '--flash_mode', 'dio',
+    '--flash_freq', '80m',
+    '--flash_size', 'detect',
+    '0xe000', path.join(__dirname, "./boot_app0.bin"),
+    '0x1000', path.join(__dirname, "./bootloader_qio_80m.bin"),
+    '0x10000', path.resolve(firmwareImagePath),
+    '0x8000', path.join(__dirname, "./firmware.partitions.bin")
+  ];
+
+  var child = spawn(path.join(__dirname, "./esptool.exe"), esptool_opts);
+
+
+  child.stdout.on('data', function(data) {
+    var debugString = data.toString();
+    console.log(debugString)
+    var data = {
+      'port': port,
+      'string': debugString
+    }
+    io.sockets.emit("progStatus", data);
+    status.comms.connectionStatus = 6;
+
+  });
+
+  child.stderr.on('data', function(data) {
+    var debugString = data.toString();
+    console.log(debugString)
+    var data = {
+      'port': port,
+      'string': debugString
+    }
+    io.sockets.emit("progStatus", data);
+    status.comms.connectionStatus = 6;
+
+  });
+
+  child.on('close', (code) => {
+    var data = {
+      'port': port,
+      'string': `[exit]`,
+      'code': code
+    }
+    io.sockets.emit("progStatus", data);
+    status.comms.connectionStatus = 0;
+
+  });
+}
+// end Interface Programming
+
 
 process.on('exit', () => debug_log('exit'))

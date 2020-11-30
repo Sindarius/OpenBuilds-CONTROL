@@ -4,7 +4,6 @@ var jogdist = 10;
 var jogDistZ = 10;
 var safeToUpdateSliders = true;
 
-
 function mmtoinchrate() {
     var value = $('#jograte').val();
     var convert = "";
@@ -101,8 +100,12 @@ function inMode() {
 }
 
 function cancelJog() {
-    socket.emit('stop', true)
-    continuousJogRunning = false;
+  socket.emit('stop', {
+    stop: false,
+    jog: true,
+    abort: false
+  })
+  continuousJogRunning = false;
 }
 
 
@@ -156,15 +159,22 @@ $(document).ready(function() {
         mmtoinchrate()
     });
 
-    $("#jograteinch").keyup(function() {
-        inchtommrate()
-    });
+  if (localStorage.getItem('jogFeed')) {
+    $('#jograte').val(localStorage.getItem('jogFeed'))
+  }
 
-    $("#jograte").on("keypress", function(e) {
-        if (e.which == 13) {
-            $("#jograte").blur();
-        }
-    })
+  $("#jograte").keyup(function() {
+    mmtoinchrate()
+    var feed = $('#jograte').val();
+    localStorage.setItem('jogFeed', feed);
+  });
+
+  $("#jograteinch").keyup(function() {
+    inchtommrate()
+    var feed = $('#jograte').val();
+    localStorage.setItem('jogFeed', feed);
+
+  });
 
     $("#jograteinch").on("keypress", function(e) {
         if (e.which == 13) {
@@ -180,14 +190,19 @@ $(document).ready(function() {
         safeToUpdateSliders = true;
     });
 
-    $("#xPosDro").click(function() {
-        $("#xPos").hide()
-        if (unit == "mm") {
-            $("#xPosInput").show().focus().val(laststatus.machine.position.work.x)
-        } else if (unit == "in") {
-            $("#xPosInput").show().focus().val((laststatus.machine.position.work.x / 25.4).toFixed(2))
-        }
-    });
+  $(document).mousedown(function(e) {
+    safeToUpdateSliders = false;
+  }).mouseup(function(e) {
+    safeToUpdateSliders = true;
+    // Added to cancel Jog moves even when user moved the mouse off the button before releasing
+    if (allowContinuousJog) {
+      if (continuousJogRunning) {
+        cancelJog()
+      }
+    }
+  }).mouseleave(function(e) {
+    safeToUpdateSliders = true;
+  });
 
     $("#xPosInput").blur(function() {
         $("#xPos").show()
@@ -409,15 +424,15 @@ $(document).ready(function() {
         }
     });
 
-    $('#gotozeroZmPosXYwPos').on('click', function(ev) {
-        if (grblParams['$22'] == 1) {
-            sendGcode('G53 G0 Z-' + grblParams["$27"]);
-        } else {
-            sendGcode('G53 G0 Z0');
-        }
-        sendGcode('G0 X0 Y0');
-        sendGcode('G0 Z0');
-    });
+  $('#gotozeroMPos').on('click', function(ev) {
+    if (grblParams['$22'] == 1) {
+      sendGcode('G53 G0 Z-' + grblParams["$27"]);
+      sendGcode('G53 G0 X-' + grblParams["$27"] + ' Y-' + grblParams["$27"]);
+    } else {
+      sendGcode('G53 G0 Z0');
+      sendGcode('G53 G0 X0 Y0');
+    }
+  });
 
     $('#gotozeroMPos').on('click', function(ev) {
         if (grblParams['$22'] == 1) {
@@ -431,270 +446,317 @@ $(document).ready(function() {
 
     });
 
+  $('.xM').on('touchstart mousedown', function(ev) {
+    if (ev.which != 1) {
+      return
+    }
+    ev.preventDefault();
+    var hasSoftLimits = false;
+    if (Object.keys(grblParams).length > 0) {
+      if (parseInt(grblParams.$20) == 1) {
+        hasSoftLimits = true;
+      }
+    }
+    if (allowContinuousJog) { // startJog();
+      if (!waitingForStatus && laststatus.comms.runStatus == "Idle") {
+        var direction = "X-";
+        var distance = 1000;
 
-    // $('.xM').on('click', function(ev) {
-    //   if (!allowContinuousJog) {
-    //     var dir = 'X-';
-    //     var feedrate = $('#jograte').val();
-    //     jog('X', '-' + jogdist, feedrate);
-    //   }
-    //   $('#runNewProbeBtn').addClass("disabled")
-    //   $('#confirmNewProbeBtn').removeClass("disabled")
-    // })
-    //
-    // $('.xP').on('click', function(ev) {
-    //   if (!allowContinuousJog) {
-    //     var dir = 'X-';
-    //     var feedrate = $('#jograte').val();
-    //     jog('X', jogdist, feedrate);
-    //   }
-    //   $('#runNewProbeBtn').addClass("disabled")
-    //   $('#confirmNewProbeBtn').removeClass("disabled")
-    // })
-    //
-    // $('.yM').on('click', function(ev) {
-    //   if (!allowContinuousJog) {
-    //     var dir = 'X-';
-    //     var feedrate = $('#jograte').val();
-    //     jog('Y', '-' + jogdist, feedrate);
-    //   }
-    //   $('#runNewProbeBtn').addClass("disabled")
-    //   $('#confirmNewProbeBtn').removeClass("disabled")
-    // })
-    //
-    // $('.yP').on('click', function(ev) {
-    //   if (!allowContinuousJog) {
-    //     var dir = 'X-';
-    //     var feedrate = $('#jograte').val();
-    //     jog('Y', jogdist, feedrate);
-    //   }
-    //   $('#runNewProbeBtn').addClass("disabled")
-    //   $('#confirmNewProbeBtn').removeClass("disabled")
-    // })
-    //
-    // $('.zM').on('click', function(ev) {
-    //   if (!allowContinuousJog) {
-    //     var dir = 'X-';
-    //     var feedrate = $('#jograte').val();
-    //     jog('Z', '-' + jogdist, feedrate);
-    //   }
-    //   $('#runNewProbeBtn').addClass("disabled")
-    //   $('#confirmNewProbeBtn').removeClass("disabled")
-    // })
-    //
-    // $('.zP').on('click', function(ev) {
-    //   if (!allowContinuousJog) {
-    //     var dir = 'X-';
-    //     var feedrate = $('#jograte').val();
-    //     jog('Z', jogdist, feedrate);
-    //   }
-    //   $('#runNewProbeBtn').addClass("disabled")
-    //   $('#confirmNewProbeBtn').removeClass("disabled")
-    // })
-
-    $('.xM').on('touchstart mousedown', function(ev) {
-        ev.preventDefault();
-        if (allowContinuousJog) { // startJog();
-            var direction = "X-";
-            var distance = 1000;
-
-            if (Object.keys(grblParams).length > 0) {
-                if (parseInt(grblParams.$20) == 1) {
-                    // Soft Limits is enabled so lets calculate maximum move distance
-                    var mindistance = parseInt(grblParams.$130)
-                    var maxdistance = 0; // Grbl all negative coordinates
-                    // Negative move:
-                    distance = (mindistance + (parseInt(laststatus.machine.position.offset.x) + parseInt(laststatus.machine.position.work.x))) - 1
-                }
-            }
-            var feed = $('#jograte').val();
-            socket.emit('runCommand', "$J=G91 G21 " + direction + distance + " F" + feed + "\n");
-            continuousJogRunning = true;
-            $('.xM').click();
-        } else {
-            var feedrate = $('#jograte').val();
-            jog('X', '-' + jogdist, feedrate);
+        if (hasSoftLimits) {
+          // Soft Limits is enabled so lets calculate maximum move distance
+          var mindistance = parseInt(grblParams.$130)
+          var maxdistance = 0; // Grbl all negative coordinates
+          // Negative move:
+          distance = (mindistance + (parseFloat(laststatus.machine.position.offset.x) + parseFloat(laststatus.machine.position.work.x))) - 1
+          distance = distance.toFixed(3);
+          if (distance < 1) {
+            toastJogWillHit("X-");
+          }
         }
-        $('#runNewProbeBtn').addClass("disabled")
-        $('#confirmNewProbeBtn').removeClass("disabled")
-    });
-    $('.xM').on('touchend mouseup', function(ev) {
-        ev.preventDefault();
-        if (allowContinuousJog) {
-            cancelJog()
+
+        var feed = $('#jograte').val();
+        if (distance >= 1) {
+          socket.emit('runCommand', "$J=G91 G21 " + direction + distance + " F" + feed + "\n");
+          continuousJogRunning = true;
+          waitingForStatus = true;
+          $('.xM').click();
         }
-    });
+      } else {
+        toastJogNotIdle();
+      }
+    } else {
+      var feedrate = $('#jograte').val();
+      jog('X', '-' + jogdist, feedrate);
+    }
+    $('#runNewProbeBtn').addClass("disabled")
+    $('#confirmNewProbeBtn').removeClass("disabled")
+  });
+  $('.xM').on('touchend mouseup', function(ev) {
+    ev.preventDefault();
+    if (allowContinuousJog) {
+      cancelJog()
+    }
+  });
 
-    $('.xP').on('touchstart mousedown', function(ev) {
-        // console.log("xp down")
-        ev.preventDefault();
-        if (allowContinuousJog) { // startJog();
-            var direction = "X";
-            var distance = 1000;
-            if (Object.keys(grblParams).length > 0) {
-                if (parseInt(grblParams.$20) == 1) {
-                    // Soft Limits is enabled so lets calculate maximum move distance
-                    var mindistance = parseInt(grblParams.$130)
-                    var maxdistance = 0; // Grbl all negative coordinates
-                    // Positive move:
-                    distance = (maxdistance - (parseInt(laststatus.machine.position.offset.x) + parseInt(laststatus.machine.position.work.x))) - 1
-                }
-            }
-            var feed = $('#jograte').val();
-            socket.emit('runCommand', "$J=G91 G21 " + direction + distance + " F" + feed + "\n");
-            continuousJogRunning = true;
-            $('.xP').click();
-        } else {
-            var feedrate = $('#jograte').val();
-            jog('X', jogdist, feedrate);
+  $('.xP').on('touchstart mousedown', function(ev) {
+    // console.log("xp down")
+    if (ev.which != 1) {
+      return
+    }
+    ev.preventDefault();
+    var hasSoftLimits = false;
+    if (Object.keys(grblParams).length > 0) {
+      if (parseInt(grblParams.$20) == 1) {
+        hasSoftLimits = true;
+      }
+    }
+    if (allowContinuousJog) { // startJog();
+      if (!waitingForStatus && laststatus.comms.runStatus == "Idle") {
+        var direction = "X";
+        var distance = 1000;
+        if (hasSoftLimits) {
+          // Soft Limits is enabled so lets calculate maximum move distance
+          var mindistance = parseInt(grblParams.$130)
+          var maxdistance = 0; // Grbl all negative coordinates
+          // Positive move:
+          distance = (maxdistance - (parseFloat(laststatus.machine.position.offset.x) + parseFloat(laststatus.machine.position.work.x))) - 1
+          distance = distance.toFixed(3);
+          if (distance < 1) {
+            toastJogWillHit("X+");
+          }
         }
-        $('#runNewProbeBtn').addClass("disabled")
-        $('#confirmNewProbeBtn').removeClass("disabled")
-    });
-    $('.xP').on('touchend mouseup', function(ev) {
-        // console.log("xp up")
-        ev.preventDefault();
-        if (allowContinuousJog) {
-            cancelJog()
+        var feed = $('#jograte').val();
+        if (distance >= 1) {
+          socket.emit('runCommand', "$J=G91 G21 " + direction + distance + " F" + feed + "\n");
+          continuousJogRunning = true;
+          waitingForStatus = true;
+          $('.xP').click();
         }
-    });
+      } else {
+        toastJogNotIdle();
+      }
+    } else {
+      var feedrate = $('#jograte').val();
+      jog('X', jogdist, feedrate);
+    }
+    $('#runNewProbeBtn').addClass("disabled")
+    $('#confirmNewProbeBtn').removeClass("disabled")
+  });
+  $('.xP').on('touchend mouseup', function(ev) {
+    // console.log("xp up")
+    ev.preventDefault();
+    if (allowContinuousJog) {
+      cancelJog()
+    }
+  });
 
-    $('.yM').on('touchstart mousedown', function(ev) {
-        ev.preventDefault();
-        if (allowContinuousJog) { // startJog();
-            var direction = "Y-";
-            var distance = 1000;
+  $('.yM').on('touchstart mousedown', function(ev) {
+    if (ev.which != 1) {
+      return
+    }
+    ev.preventDefault();
+    var hasSoftLimits = false;
+    if (Object.keys(grblParams).length > 0) {
+      if (parseInt(grblParams.$20) == 1) {
+        hasSoftLimits = true;
+      }
+    }
+    if (allowContinuousJog) { // startJog();
+      if (!waitingForStatus && laststatus.comms.runStatus == "Idle") {
+        var direction = "Y-";
+        var distance = 1000;
 
-            if (Object.keys(grblParams).length > 0) {
-                if (parseInt(grblParams.$20) == 1) {
-                    // Soft Limits is enabled so lets calculate maximum move distance
-                    var mindistance = parseInt(grblParams.$131)
-                    var maxdistance = 0; // Grbl all negative coordinates
-                    // Negative move:
-                    distance = (mindistance + (parseInt(laststatus.machine.position.offset.y) + parseInt(laststatus.machine.position.work.y))) - 1
-                }
-            }
-
-            var feed = $('#jograte').val();
-            socket.emit('runCommand', "$J=G91 G21 " + direction + distance + " F" + feed + "\n");
-            continuousJogRunning = true;
-            $('.yM').click();
-        } else {
-            var feedrate = $('#jograte').val();
-            jog('Y', '-' + jogdist, feedrate);
+        if (hasSoftLimits) {
+          // Soft Limits is enabled so lets calculate maximum move distance
+          var mindistance = parseInt(grblParams.$131)
+          var maxdistance = 0; // Grbl all negative coordinates
+          // Negative move:
+          distance = (mindistance + (parseFloat(laststatus.machine.position.offset.y) + parseFloat(laststatus.machine.position.work.y))) - 1
+          distance = distance.toFixed(3);
+          if (distance < 1) {
+            toastJogWillHit("Y-");
+          }
         }
-        $('#runNewProbeBtn').addClass("disabled")
-        $('#confirmNewProbeBtn').removeClass("disabled")
-    });
-    $('.yM').on('touchend mouseup', function(ev) {
-        ev.preventDefault();
-        if (allowContinuousJog) {
-            cancelJog()
+
+        var feed = $('#jograte').val();
+        if (distance >= 1) {
+          socket.emit('runCommand', "$J=G91 G21 " + direction + distance + " F" + feed + "\n");
+          continuousJogRunning = true;
+          waitingForStatus = true;
+          $('.yM').click();
         }
-    });
+      } else {
+        toastJogNotIdle();
+      }
+    } else {
+      var feedrate = $('#jograte').val();
+      jog('Y', '-' + jogdist, feedrate);
+    }
+    $('#runNewProbeBtn').addClass("disabled")
+    $('#confirmNewProbeBtn').removeClass("disabled")
+  });
+  $('.yM').on('touchend mouseup', function(ev) {
+    ev.preventDefault();
+    if (allowContinuousJog) {
+      cancelJog()
+    }
+  });
 
-    $('.yP').on('touchstart mousedown', function(ev) {
-        ev.preventDefault();
-        if (allowContinuousJog) { // startJog();
-            var direction = "Y";
-            var distance = 1000;
+  $('.yP').on('touchstart mousedown', function(ev) {
+    if (ev.which != 1) {
+      return
+    }
+    ev.preventDefault();
+    var hasSoftLimits = false;
+    if (Object.keys(grblParams).length > 0) {
+      if (parseInt(grblParams.$20) == 1) {
+        hasSoftLimits = true;
+      }
+    }
+    if (allowContinuousJog) { // startJog();
+      if (!waitingForStatus && laststatus.comms.runStatus == "Idle") {
+        var direction = "Y";
+        var distance = 1000;
 
-            if (Object.keys(grblParams).length > 0) {
-                if (parseInt(grblParams.$20) == 1) {
-                    // Soft Limits is enabled so lets calculate maximum move distance
-                    var mindistance = parseInt(grblParams.$131)
-                    var maxdistance = 0; // Grbl all negative coordinates
-                    // Positive move:
-                    distance = (maxdistance - (parseInt(laststatus.machine.position.offset.y) + parseInt(laststatus.machine.position.work.y))) - 1
-                }
-            }
-
-            var feed = $('#jograte').val();
-            socket.emit('runCommand', "$J=G91 G21 " + direction + distance + " F" + feed + "\n");
-            continuousJogRunning = true;
-            $('#yP').click();
-        } else {
-            var feedrate = $('#jograte').val();
-            jog('Y', jogdist, feedrate);
+        if (hasSoftLimits) {
+          // Soft Limits is enabled so lets calculate maximum move distance
+          var mindistance = parseInt(grblParams.$131)
+          var maxdistance = 0; // Grbl all negative coordinates
+          // Positive move:
+          distance = (maxdistance - (parseFloat(laststatus.machine.position.offset.y) + parseFloat(laststatus.machine.position.work.y))) - 1
+          distance = distance.toFixed(3);
+          if (distance < 1) {
+            toastJogWillHit("Y+");
+          }
         }
-        $('#runNewProbeBtn').addClass("disabled")
-        $('#confirmNewProbeBtn').removeClass("disabled")
-    });
-    $('.yP').on('touchend mouseup', function(ev) {
-        ev.preventDefault();
-        if (allowContinuousJog) {
-            cancelJog()
+
+        var feed = $('#jograte').val();
+        if (distance >= 1) {
+          socket.emit('runCommand', "$J=G91 G21 " + direction + distance + " F" + feed + "\n");
+          continuousJogRunning = true;
+          waitingForStatus = true;
+          $('#yP').click();
         }
-    });
+      } else {
+        toastJogNotIdle();
+      }
+    } else {
+      var feedrate = $('#jograte').val();
+      jog('Y', jogdist, feedrate);
+    }
+    $('#runNewProbeBtn').addClass("disabled")
+    $('#confirmNewProbeBtn').removeClass("disabled")
+  });
+  $('.yP').on('touchend mouseup', function(ev) {
+    ev.preventDefault();
+    if (allowContinuousJog) {
+      cancelJog()
+    }
+  });
 
-    $('.zM').on('touchstart mousedown', function(ev) {
-        ev.preventDefault();
-        if (allowContinuousJog) { // startJog();
-            var direction = "Z-";
-            var distance = 1000;
+  $('.zM').on('touchstart mousedown', function(ev) {
+    if (ev.which != 1) {
+      return
+    }
+    ev.preventDefault();
+    var hasSoftLimits = false;
+    if (Object.keys(grblParams).length > 0) {
+      if (parseInt(grblParams.$20) == 1) {
+        hasSoftLimits = true;
+      }
+    }
+    if (allowContinuousJog) { // startJog();
+      if (!waitingForStatus && laststatus.comms.runStatus == "Idle") {
+        var direction = "Z-";
+        var distance = 1000;
 
-            if (Object.keys(grblParams).length > 0) {
-                if (parseInt(grblParams.$20) == 1) {
-                    // Soft Limits is enabled so lets calculate maximum move distance
-                    var mindistance = parseInt(grblParams.$132)
-                    var maxdistance = 0; // Grbl all negative coordinates
-                    // Negative move:
-                    distance = (mindistance + (parseInt(laststatus.machine.position.offset.z) + parseInt(laststatus.machine.position.work.z))) - 1
-                }
-            }
-
-            var feed = $('#jograte').val();
-            socket.emit('runCommand', "$J=G91 G21 " + direction + distance + " F" + feed + "\n");
-            continuousJogRunning = true;
-            $('.zM').click();
-        } else {
-            var feedrate = $('#jograte').val();
-            jog('Z', '-' + jogDistZ, feedrate);
+        if (hasSoftLimits) {
+          // Soft Limits is enabled so lets calculate maximum move distance
+          var mindistance = parseInt(grblParams.$132)
+          var maxdistance = 0; // Grbl all negative coordinates
+          // Negative move:
+          distance = (mindistance + (parseFloat(laststatus.machine.position.offset.z) + parseFloat(laststatus.machine.position.work.z))) - 1
+          distance = distance.toFixed(3);
+          if (distance < 1) {
+            toastJogWillHit("Z-");
+          }
         }
-        $('#runNewProbeBtn').addClass("disabled")
-        $('#confirmNewProbeBtn').removeClass("disabled")
-    });
-    $('.zM').on('touchend mouseup', function(ev) {
-        ev.preventDefault();
-        if (allowContinuousJog) {
-            cancelJog()
+
+        var feed = $('#jograte').val();
+        if (distance >= 1) {
+          socket.emit('runCommand', "$J=G91 G21 " + direction + distance + " F" + feed + "\n");
+          continuousJogRunning = true;
+          waitingForStatus = true;
+          $('.zM').click();
         }
-    });
+      } else {
+        toastJogNotIdle();
+      }
+    } else {
+      var feedrate = $('#jograte').val();
+      jog('Z', '-' + jogdist, feedrate);
+    }
+    $('#runNewProbeBtn').addClass("disabled")
+    $('#confirmNewProbeBtn').removeClass("disabled")
+  });
+  $('.zM').on('touchend mouseup', function(ev) {
+    ev.preventDefault();
+    if (allowContinuousJog) {
+      cancelJog()
+    }
+  });
 
-    $('.zP').on('touchstart mousedown', function(ev) {
-        ev.preventDefault();
-        if (allowContinuousJog) { // startJog();
-            var direction = "Z";
-            var distance = 1000;
+  $('.zP').on('touchstart mousedown', function(ev) {
+    if (ev.which != 1) {
+      return
+    }
+    ev.preventDefault();
+    var hasSoftLimits = false;
+    if (Object.keys(grblParams).length > 0) {
+      if (parseInt(grblParams.$20) == 1) {
+        hasSoftLimits = true;
+      }
+    }
+    if (allowContinuousJog) { // startJog();
+      if (!waitingForStatus && laststatus.comms.runStatus == "Idle") {
+        var direction = "Z";
+        var distance = 1000;
 
-            if (Object.keys(grblParams).length > 0) {
-                if (parseInt(grblParams.$20) == 1) {
-                    // Soft Limits is enabled so lets calculate maximum move distance
-                    var mindistance = parseInt(grblParams.$132)
-                    var maxdistance = 0; // Grbl all negative coordinates
-                    // Positive move:
-                    distance = (maxdistance - (parseInt(laststatus.machine.position.offset.z) + parseInt(laststatus.machine.position.work.z))) - 1
-                }
-            }
-
-            var feed = $('#jograte').val();
-            socket.emit('runCommand', "$J=G91 G21 " + direction + distance + " F" + feed + "\n");
-            continuousJogRunning = true;
-            $('.zP').click();
-        } else {
-            var feedrate = $('#jograte').val();
-            jog('Z', jogDistZ, feedrate);
+        if (hasSoftLimits) {
+          // Soft Limits is enabled so lets calculate maximum move distance
+          var mindistance = parseInt(grblParams.$132)
+          var maxdistance = 0; // Grbl all negative coordinates
+          // Positive move:
+          distance = (maxdistance - (parseFloat(laststatus.machine.position.offset.z) + parseFloat(laststatus.machine.position.work.z))) - 1
+          distance = distance.toFixed(3);
+          if (distance < 1) {
+            toastJogWillHit("Z+");
+          }
         }
-        $('#runNewProbeBtn').addClass("disabled")
-        $('#confirmNewProbeBtn').removeClass("disabled")
-    });
-    $('.zP').on('touchend mouseup', function(ev) {
-        ev.preventDefault();
-        if (allowContinuousJog) {
-            cancelJog()
-        }
-    });
 
+        var feed = $('#jograte').val();
+        if (distance >= 1) {
+          socket.emit('runCommand', "$J=G91 G21 " + direction + distance + " F" + feed + "\n");
+          continuousJogRunning = true;
+          waitingForStatus = true;
+          $('.zP').click();
+        }
+      } else {
+        toastJogNotIdle();
+      }
+    } else {
+      var feedrate = $('#jograte').val();
+      jog('Z', jogdist, feedrate);
+    }
+    $('#runNewProbeBtn').addClass("disabled")
+    $('#confirmNewProbeBtn').removeClass("disabled")
+  });
+  $('.zP').on('touchend mouseup', function(ev) {
+    ev.preventDefault();
+    if (allowContinuousJog) {
+      cancelJog()
+    }
+  });
 
     $('#homeBtn').on('click', function(ev) {
         home();
@@ -874,4 +936,16 @@ function home() {
     } else if (laststatus != undefined && laststatus.machine.firmware.type == 'smoothie') {
         sendGcode('G28')
     }
+}
+
+function toastJogWillHit(axis) {
+  printLog("<span class='fg-red'>[ jog ] </span><span class='fg-green'>Unable to jog toward " + axis + ", will hit soft-limit</span>")
+  var toast = Metro.toast.create;
+  toast("Unable to jog toward " + axis + ", will hit soft-limit", null, 1000, "bg-darkRed fg-white")
+}
+
+function toastJogNotIdle(axis) {
+  printLog("<span class='fg-red'>[ jog ] </span><span class='fg-green'>Please wait for machine to be Idle, before jogging</span>")
+  var toast = Metro.toast.create;
+  toast("Please wait for machine to be Idle, before jogging. Try again once it is Idle", null, 1000, "bg-darkRed fg-white")
 }
