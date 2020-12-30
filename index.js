@@ -214,6 +214,7 @@ if (isElectron()) {
 } else {
   var uploadsDir = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + 'Library/Preferences' : '/var/local')
 }
+var jobStartTime = false;
 var jobCompletedMsg = ""; // message sent when job is done
 var uploadedgcode = ""; // var to store uploaded gcode
 var uploadedworkspace = ""; // var to store uploaded OpenBuildsCAM Workspace
@@ -399,11 +400,11 @@ var status = {
     diskdrives: [],
       firmware: {
         availVersion: "",
-        downloadedVersion: ""
-      }
+        installedVersion: "",
+      },
+      connected: false
   }
 };
-
 
 
 async function findPorts() {
@@ -751,7 +752,8 @@ io.on("connection", function(socket) {
 
     var output = {
       'command': 'Interface USB Drive',
-      'response': "Starting to copy data to " + data
+      'response': "Starting to copy data to " + data,
+      'type': 'info'
     }
     io.sockets.emit('data', output);
 
@@ -765,14 +767,16 @@ io.on("connection", function(socket) {
         if (err) {
           var output = {
             'command': 'Interface USB Drive',
-            'response': "Failed to copy PROBE macros to " + dest + ":  " + JSON.stringify(err)
+            'response': "Failed to copy PROBE macros to " + dest + ":  " + JSON.stringify(err),
+            'type': 'error'
           }
           io.sockets.emit('data', output);
           errorCount++
         } else {
           var output = {
             'command': 'Interface USB Drive',
-            'response': "Copied PROBE macros to " + dest + " succesfully!"
+            'response': "Copied PROBE macros to " + dest + " succesfully!",
+            'type': 'success'
           }
           io.sockets.emit('data', output);
         }
@@ -782,12 +786,14 @@ io.on("connection", function(socket) {
       if (errorCount == 0) {
         var output = {
           'command': 'Interface USB Drive',
-          'response': "Finished copying supporting files to Drive " + data
+          'response': "Finished copying supporting files to Drive " + data,
+          'type': 'success'
         }
         io.sockets.emit('data', output);
         var output = {
           'command': 'Interface USB Drive',
-          'response': "Please Eject the drive (Safely Remove) and insert it into your Interface's USB port"
+          'response': "Please Eject the drive (Safely Remove) and insert it into your Interface's USB port",
+          'type': 'info'
         }
         io.sockets.emit('data', output);
       }
@@ -817,7 +823,8 @@ io.on("connection", function(socket) {
           debug_log("Error: ", err.message);
           var output = {
             'command': '',
-            'response': "PORT ERROR: " + err.message
+            'response': "PORT ERROR: " + err.message,
+            'type': 'error'
           }
           io.sockets.emit('data', output);
 
@@ -837,7 +844,8 @@ io.on("connection", function(socket) {
         debug_log("PORT INFO: Connected to " + port.path + " at " + port.baudRate);
         var output = {
           'command': 'connect',
-          'response': "PORT INFO: Port is now open: " + port.path + " - Attempting to detect Firmware"
+          'response': "PORT INFO: Port is now open: " + port.path + " - Attempting to detect Firmware",
+          'type': 'info'
         }
         io.sockets.emit('data', output);
 
@@ -845,14 +853,16 @@ io.on("connection", function(socket) {
 
         var output = {
           'command': 'connect',
-          'response': "Checking for firmware on " + port.path
+          'response': "Checking for firmware on " + port.path,
+          'type': 'info'
         }
         io.sockets.emit('data', output);
         addQRealtime("\n"); // this causes smoothie to send the welcome string
 
         var output = {
           'command': 'connect',
-          'response': "Detecting Firmware: Method 1 (Autoreset)"
+          'response': "Detecting Firmware: Method 1 (Autoreset)",
+          'type': 'info'
         }
         io.sockets.emit('data', output);
 
@@ -861,7 +871,8 @@ io.on("connection", function(socket) {
             debug_log("Didnt detect firmware after AutoReset. Lets see if we have Grbl instance with a board that doesnt have AutoReset");
             var output = {
               'command': 'connect',
-              'response': "Detecting Firmware: Method 2 (Ctrl+X)"
+              'response': "Detecting Firmware: Method 2 (Ctrl+X)",
+              'type': 'info'
             }
             io.sockets.emit('data', output);
             addQRealtime(String.fromCharCode(0x18)); // ctrl-x (needed for rx/tx connection)
@@ -874,7 +885,8 @@ io.on("connection", function(socket) {
             debug_log("No firmware yet, probably not Grbl then. lets see if we have Smoothie?");
             var output = {
               'command': 'connect',
-              'response': "Detecting Firmware: Method 3 (others that are not supported)"
+              'response': "Detecting Firmware: Method 3 (others that are not supported)",
+              'type': 'info'
             }
             io.sockets.emit('data', output);
             addQRealtime("version\n"); // Check if it's Smoothieware?
@@ -887,16 +899,27 @@ io.on("connection", function(socket) {
             // Close port if we don't detect supported firmware after 2s.
             if (status.machine.firmware.type.length < 1) {
               debug_log("No supported firmware detected. Closing port " + port.path);
-              var output = {
-                'command': 'connect',
-                'response': "ERROR!:  No supported firmware detected - you need a controller with Grbl 1.1x on it, or there is a problem with your controller. Closing port " + port.path
+              if (status.interface.connected) {
+                var output = {
+                  'command': 'connect',
+                  'response': `ERROR!:  Connection established to INTERFACE, but no response from Grbl on the upstream controller. See https://docs.openbuilds.com/interface for more details. Closing port ` + port.path,
+                  'type': 'error'
+                }
+              } else {
+                var output = {
+                  'command': 'connect',
+                  'response': `ERROR!:  No supported firmware detected - See https://docs.openbuilds.com/doku.php?id=docs:blackbox:faq-usb-connection-failed
+                  for more details. Closing port ` + port.path,
+                  'type': 'error'
+                }
               }
               io.sockets.emit('data', output);
               stopPort();
             } else {
               var output = {
                 'command': 'connect',
-                'response': "Firmware Detected:  " + status.machine.firmware.type + " version " + status.machine.firmware.version + " on " + port.path
+                'response': "Firmware Detected:  " + status.machine.firmware.type + " version " + status.machine.firmware.version + " on " + port.path,
+                'type': 'success'
               }
               io.sockets.emit('data', output);
             }
@@ -913,14 +936,15 @@ io.on("connection", function(socket) {
         debug_log("PORT INFO: Port closed");
         var output = {
           'command': 'disconnect',
-          'response': "PORT INFO: Port closed"
+          'response': "PORT INFO: Port closed",
+          'type': 'info'
         }
         io.sockets.emit('data', output);
         status.comms.connectionStatus = 0;
       }); // end port.onclose
 
       parser.on("data", function(data) {
-        // console.log(data)
+        //console.log(data)
         var command = sentBuffer[0];
 
         if (data.indexOf("<") != 0) {
@@ -1036,17 +1060,49 @@ io.on("connection", function(socket) {
             var output = {
               'command': '[ PROBE ]',
               'response': "Probe Completed.",
+              'type': 'success'
             }
             io.sockets.emit('data', output);
           } else {
             var output = {
               'command': '[ PROBE ]',
               'response': "Probe move ERROR - probe did not make contact within specified distance",
+              'type': 'error'
             }
             io.sockets.emit('data', output);
           }
           io.sockets.emit('prbResult', status.machine.probe);
         };
+
+        if (data.indexOf("[INTF:") === 0) {
+          var output = {
+            'command': 'connect',
+            'response': "Detected an OpenBuilds Interface on port " + port.path,
+            'type': 'success'
+          }
+          io.sockets.emit('data', output);
+          status.interface.connected = true;
+          if (data.split(":")[1].indexOf("ver") == 0) {
+            var installedVersion = parseFloat(data.split(":")[1].split("]")[0].split("-")[1])
+            status.interface.firmware.installedVersion = installedVersion
+            var output = {
+              'command': 'connect',
+              'response': "OpenBuilds Interface Firmware Version: v" + installedVersion,
+              'type': 'info'
+            }
+            io.sockets.emit('data', output);
+            if (installedVersion < status.interface.firmware.availVersion) {
+              var output = {
+                'command': 'connect',
+                'response': "OpenBuilds Interface Firmware OUTDATED: v" + installedVersion + " can be upgraded to v" + status.interface.firmware.availVersion,
+                'type': 'error'
+              }
+              io.sockets.emit('data', output);
+              io.sockets.emit('interfaceOutdated', status);
+            }
+          }
+          io.sockets.emit("status", status);
+        }
 
         // Machine Identification
         if (data.indexOf("Grbl") === 0) { // Check if it's Grbl
@@ -1066,7 +1122,8 @@ io.on("connection", function(socket) {
               }
               var output = {
                 'command': command,
-                'response': "Detected an unsupported version: Grbl " + status.machine.firmware.version + ". This is sadly outdated. Please upgrade to Grbl 1.1 or newer to use this software.  Go to http://github.com/gnea/grbl"
+                'response': "Detected an unsupported version: Grbl " + status.machine.firmware.version + ". This is sadly outdated. Please upgrade to Grbl 1.1 or newer to use this software.  Go to http://github.com/gnea/grbl",
+                'type': 'error'
               }
               io.sockets.emit('data', output);
             }
@@ -1098,7 +1155,8 @@ io.on("connection", function(socket) {
           // }, 200);
           var output = {
             'command': "FIRMWARE ERROR",
-            'response': "Detected an unsupported version: Smoothieware " + status.machine.firmware.version + ". This software no longer support Smoothieware. \nLuckilly there is an alternative firmware you can install on your controller to make it work with this software. Check out Grbl-LPC at https://github.com/cprezzi/grbl-LPC - Grbl-LPC is a Grbl port for controllers using the NXP LPC176x chips, for example Smoothieboards"
+            'response': "Detected an unsupported version: Smoothieware " + status.machine.firmware.version + ". This software no longer support Smoothieware. \nLuckilly there is an alternative firmware you can install on your controller to make it work with this software. Check out Grbl-LPC at https://github.com/cprezzi/grbl-LPC - Grbl-LPC is a Grbl port for controllers using the NXP LPC176x chips, for example Smoothieboards",
+            'type': 'error'
           }
           io.sockets.emit('data', output);
           stopPort();
@@ -1132,7 +1190,8 @@ io.on("connection", function(socket) {
               }
               var output = {
                 'command': '',
-                'response': 'ALARM: ' + alarmCode + ' - ' + grblStrings.alarms(alarmCode) + " [ " + command + " ]"
+                'response': 'ALARM: ' + alarmCode + ' - ' + grblStrings.alarms(alarmCode) + " [ " + command + " ]",
+                'type': 'error'
               }
               io.sockets.emit('data', output);
               break;
@@ -1150,13 +1209,19 @@ io.on("connection", function(socket) {
             case 'grbl':
               // sentBuffer.shift();
               var errorCode = parseInt(data.split(':')[1]);
+
+              var lastAlarm = "";
+              if (errorCode == 9 && status.comms.connectionStatus == 5 && status.comms.alarm.length > 0) {
+                lastAlarm = "<hr>This error may just be a symptom of an earlier event:<br> ALARM: " + status.comms.alarm
+              }
               debug_log('error: ' + errorCode + ' - ' + grblStrings.errors(errorCode) + " [ " + command + " ]");
               var output = {
                 'command': '',
-                'response': 'error: ' + errorCode + ' - ' + grblStrings.errors(errorCode) + " [ " + command + " ]"
+                'response': 'error: ' + errorCode + ' - ' + grblStrings.errors(errorCode) + " [ " + command + " ]" + lastAlarm,
+                'type': 'error'
               }
               io.sockets.emit('data', output);
-              io.sockets.emit("toastError", 'error: ' + errorCode + ' - ' + grblStrings.errors(errorCode) + " [ " + command + " ]")
+              io.sockets.emit("toastError", 'error: ' + errorCode + ' - ' + grblStrings.errors(errorCode) + " [ " + command + " ]" + lastAlarm)
               break;
           }
           debug_log("error;")
@@ -1193,7 +1258,8 @@ io.on("connection", function(socket) {
             string += data //+ "  [ " + command + " ]"
             var output = {
               'command': command,
-              'response': string
+              'response': string,
+              'type': 'info'
             }
             // debug_log(output.response)
             io.sockets.emit('data', output);
@@ -1202,7 +1268,8 @@ io.on("connection", function(socket) {
           if (data.indexOf("<") != 0) {
             var output = {
               'command': "",
-              'response': data
+              'response': data,
+              'type': 'info'
             }
             io.sockets.emit('data', output);
           }
@@ -1223,9 +1290,11 @@ io.on("connection", function(socket) {
 
   socket.on('runJob', function(object) {
     // debug_log(data)
+    jobStartTime = false;
     var data = object.data
     if (object.isJob) {
       uploadedgcode = data;
+      jobStartTime = new Date().getTime();
     }
 
     if (object.completedMsg) {
@@ -1679,6 +1748,7 @@ io.on("connection", function(socket) {
       }
       status.comms.runStatus = 'Stopped'
       status.comms.connectionStatus = 2;
+      status.comms.alarm = "";
       io.sockets.emit('errorsCleared', true);
     } else {
       debug_log('ERROR: Machine connection not open!');
@@ -1789,7 +1859,7 @@ function stopPort() {
 }
 
 function parseFeedback(data) {
-  // debug_log(data)
+  debug_log(data)
   var state = data.substring(1, data.search(/(,|\|)/));
   status.comms.runStatus = state
   if (state == "Alarm") {
@@ -1797,13 +1867,14 @@ function parseFeedback(data) {
     status.comms.connectionStatus = 5;
     switch (status.machine.firmware.type) {
       case 'grbl':
-        // sentBuffer.shift();
-        var alarmCode = parseInt(data.split(':')[1]);
-        debug_log('ALARM: ' + alarmCode + ' - ' + grblStrings.alarms(alarmCode));
-        status.comms.alarm = alarmCode + ' - ' + grblStrings.alarms(alarmCode)
+        //var alarmCode = parseInt(data.split(':')[1]);
+        debug_log('ALARM: ' + data);
+        //status.comms.alarm = alarmCode + ' - ' + grblStrings.alarms(alarmCode)
         break;
     }
     status.comms.connectionStatus = 5;
+  } else if (state == "Hold:0") {
+    pause();
   }
   if (status.machine.firmware.type == "grbl") {
     // Extract work offset (for Grbl > 1.1 only!)
@@ -1942,7 +2013,8 @@ function parseFeedback(data) {
         pause();
         var output = {
           'command': '[external from hardware]',
-          'response': "OpenBuilds CONTROL received a FEEDHOLD notification from Grbl: This could be due to someone pressing the HOLD button (if connected), or DriverMinder on the xPROv4 detected a driver fault"
+          'response': "OpenBuilds CONTROL received a FEEDHOLD notification from Grbl: This could be due to someone pressing the HOLD button (if connected)",
+          'type': 'info'
         }
         io.sockets.emit('data', output);
       } // end if HOLD
@@ -1952,7 +2024,8 @@ function parseFeedback(data) {
         stop(true);
         var output = {
           'command': '[external from hardware]',
-          'response': "OpenBuilds CONTROL received a RESET/ABORT notification from Grbl: This could be due to someone pressing the RESET/ABORT button (if connected), or DriverMinder on the xPROv4 detected a driver fault"
+          'response': "OpenBuilds CONTROL received a RESET/ABORT notification from Grbl: This could be due to someone pressing the RESET/ABORT button (if connected)",
+          'type': 'info'
         }
         io.sockets.emit('data', output);
       } // end if ABORT
@@ -1962,7 +2035,8 @@ function parseFeedback(data) {
         unpause();
         var output = {
           'command': '[external from hardware]',
-          'response': "OpenBuilds CONTROL received a CYCLESTART/RESUME notification from Grbl: This could be due to someone pressing the CYCLESTART/RESUME button (if connected)"
+          'response': "OpenBuilds CONTROL received a CYCLESTART/RESUME notification from Grbl: This could be due to someone pressing the CYCLESTART/RESUME button (if connected)",
+          'type': 'info'
         }
         io.sockets.emit('data', output);
       } // end if RESUME/START
@@ -2069,10 +2143,13 @@ function send1Q() {
       status.comms.connectionStatus = 2; // finished
       var data = {
         completed: true,
-        jobCompletedMsg: jobCompletedMsg
+        jobCompletedMsg: jobCompletedMsg,
+        jobStartTime: jobStartTime,
+        jobEndTime: new Date().getTime()
       }
       io.sockets.emit('jobComplete', data);
       jobCompletedMsg = ""
+      jobStartTime = false;
     }
   } else {
     debug_log('Not Connected')
@@ -2591,7 +2668,8 @@ https.get("https://raw.githubusercontent.com/OpenBuilds/firmware/main/interface/
 
           var output = {
             'command': 'interface firmware update tool',
-            'response': "Downloaded firmware.bin v" + status.interface.firmware.availVersion
+            'response': "Downloaded firmware.bin v" + status.interface.firmware.availVersion,
+            'type': 'info'
           }
           io.sockets.emit('data', output);
 
@@ -2601,7 +2679,8 @@ https.get("https://raw.githubusercontent.com/OpenBuilds/firmware/main/interface/
       req.on('error', error => {
         var output = {
           'command': 'interface firmware update tool',
-          'response': "Unable to download latest firmware.bin"
+          'response': "Unable to download latest firmware.bin",
+          'type': 'error'
         }
         io.sockets.emit('data', output);
       })

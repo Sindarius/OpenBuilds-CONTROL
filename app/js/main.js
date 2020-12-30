@@ -3,6 +3,7 @@ var loadedFileName = "";
 var editor;
 var isJogWidget = false;
 
+
 function setWindowTitle(status) {
 
   var string = "OpenBuilds CONTROL"
@@ -27,7 +28,19 @@ function setWindowTitle(status) {
 
 }
 
+// splash screen ad-fade-in, and fade out after
+function showAndHideSplash() {
+  $('#splashAd').fadeIn(200)
+  setTimeout(function() {
+    $('#splash').fadeOut(500);
+  }, 2000)
+}
+
 function getChangelog() {
+
+  // Splash Screen Begin
+  $("#splashAd").html(`<img src="http://openbuilds.com/uploadfiles/control/splash.png?date=` + new Date().getTime() + `" onerror="this.onerror=null;this.src='splashicon.png';showAndHideSplash()" style="display:block; margin:auto;" onload="showAndHideSplash()" />`)
+
   $("#changelog").empty()
   var template2 = `<ul>`
   $.get("https://raw.githubusercontent.com/OpenBuilds/OpenBuilds-CONTROL/master/CHANGELOG.txt?date=" + new Date().getTime(), function(data) {
@@ -126,13 +139,10 @@ $(document).ready(function() {
 
   getChangelog()
 
-  setTimeout(function() {
-    $('#splash').fadeOut(500);
-  }, 100)
-
   setInterval(function() {
     setWindowTitle();
   }, 1000)
+
   const element = new Image();
   Object.defineProperty(element, 'id', {
     get: function() {
@@ -172,6 +182,7 @@ $(document).ready(function() {
     }
   });
   console.log('%c', element);
+
 });
 
 function readFile(evt) {
@@ -202,9 +213,9 @@ function loadFile(f) {
       loadedFileName = f.name;
       setWindowTitle()
       if (webgl) {
-        printLog('<span class="fg-red">[ GCODE Parser ]</span><span class="fg-green"> GCODE File Loaded, please wait while we render a preview... </span>');
+        printLog(`<span class="fg-red">[ GCODE Parser ]</span><span class='fg-darkGray'> GCODE File Loaded, please wait while we render a preview... </span>`);
       } else {
-        printLog('<span class="fg-red">[ GCODE Parser ]</span><span class="fg-green"> GCODE File Loaded </span>');
+        printLog(`<span class="fg-red">[ GCODE Parser ]</span><span class='fg-darkGray'> GCODE File Loaded </span>`);
       }
       parseGcodeInWebWorker(this.result)
 

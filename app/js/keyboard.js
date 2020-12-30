@@ -89,36 +89,35 @@ function bindKeys() {
 
     // Bind for Macro keys
 
-    if (buttonsarray && buttonsarray.length > 0) {
-        for (i = 0; i < buttonsarray.length; i++) {
-            if (buttonsarray[i].macrokeyboardshortcut && buttonsarray[i].macrokeyboardshortcut.length) {
-                $(document).bind('keydown', buttonsarray[i].macrokeyboardshortcut, function(e) {
-                    e.preventDefault();
-                    console.log(e)
-                    var newVal = "";
-                    if (e.altKey) {
-                        newVal += 'alt+'
-                    }
-                    if (e.ctrlKey) {
-                        newVal += 'ctrl+'
-                    }
-                    if (e.shiftKey) {
-                        newVal += 'shift+'
-                    }
-                    newVal += e.key
-                    newVal = newVal.toLowerCase();
-                    var macro = searchMacro("macrokeyboardshortcut", newVal, buttonsarray)
-                    console.log(macro)
-                    if (macro && macro.codetype == "gcode") {
-                        sendGcode(macro.gcode); // TODO change to runMacro with JS
-                    } else if (macro && macro.codetype == "javascript") {
-                        executeJS(macro.javascript)
-                    } else {
-                        printLog("Macro not found for " + newVal)
-                    }
-                });
-            }
-        }
+  if (buttonsarray && buttonsarray.length > 0) {
+    for (i = 0; i < buttonsarray.length; i++) {
+      if (buttonsarray[i].macrokeyboardshortcut && buttonsarray[i].macrokeyboardshortcut.length) {
+        $(document).bind('keydown', buttonsarray[i].macrokeyboardshortcut, function(e) {
+          e.preventDefault();
+          console.log(e)
+          var newVal = "";
+          if (e.altKey) {
+            newVal += 'alt+'
+          }
+          if (e.ctrlKey) {
+            newVal += 'ctrl+'
+          }
+          if (e.shiftKey) {
+            newVal += 'shift+'
+          }
+          newVal += e.key
+          newVal = newVal.toLowerCase();
+          var macro = searchMacro("macrokeyboardshortcut", newVal, buttonsarray)
+          console.log(macro)
+          if (macro && macro.codetype == "gcode") {
+            sendGcode(macro.gcode); // TODO change to runMacro with JS
+          } else if (macro && macro.codetype == "javascript") {
+            executeJS(macro.javascript)
+          } else {
+            printLog("<span class='fg-red'>[ ERROR ]</span>  <span class='fg-red'>Macro not found for " + newVal + "</span>")
+          }
+        });
+      }
     }
 
     // Bind for Jog and Control Buttons

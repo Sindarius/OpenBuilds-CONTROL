@@ -39,6 +39,37 @@ function showGrbl(bool) {
   }
 }
 
+function printLogModern(icon, source, string, printLogCls) {
+  if (!disableSerialLog) {
+    if (document.getElementById("console") !== null) {
+      if (string.isString) {
+        string = string.replace(/\r\n|\n|\r/, "<br />");
+      }
+      if ($('#console p').length > 300) {
+        // remove oldest if already at 300 lines
+        $('#console p').first().remove();
+      }
+      var template = '<p class="pf">';
+      if (icon) {
+        template += icon
+      }
+      var time = new Date();
+      template += '<span class="fg-dark">[' + (time.getHours() < 10 ? '0' : '') + time.getHours() + ":" + (time.getMinutes() < 10 ? '0' : '') + time.getMinutes() + ":" + (time.getSeconds() < 10 ? '0' : '') + time.getSeconds() + ']</span> ';
+
+      if (source) {
+        template += "<span class='fg-red'>[ " + source + " ] </span>"
+      } else {
+        template += "<span class='fg-red'>[  ] </span>"
+      }
+      if (string) {
+        template += "<span class='" + printLogCls + "'>" + string + "</span>"
+      }
+      $('#console').append(template);
+      $('#console').scrollTop(($("#console")[0].scrollHeight - $("#console").height()) + 20);
+    }
+  }
+};
+
 function printLog(string) {
   if (!disableSerialLog) {
     if (document.getElementById("console") !== null) {
@@ -53,7 +84,7 @@ function printLog(string) {
       var template = '<p class="pf">';
       var time = new Date();
 
-      template += '<span class="fg-brandColor1">[' + (time.getHours() < 10 ? '0' : '') + time.getHours() + ":" + (time.getMinutes() < 10 ? '0' : '') + time.getMinutes() + ":" + (time.getSeconds() < 10 ? '0' : '') + time.getSeconds() + ']</span> ';
+      template += '<span class="fg-dark">[' + (time.getHours() < 10 ? '0' : '') + time.getHours() + ":" + (time.getMinutes() < 10 ? '0' : '') + time.getMinutes() + ":" + (time.getSeconds() < 10 ? '0' : '') + time.getSeconds() + ']</span> ';
       template += string;
       $('#console').append(template);
       $('#console').scrollTop(($("#console")[0].scrollHeight - $("#console").height()) + 20);
@@ -63,7 +94,11 @@ function printLog(string) {
 
 function initSocket() {
   socket = io.connect(server); // socket.io init
-  printLog("<span class='fg-red'>[ Websocket ] </span><span class='fg-green'>Bidirectional Websocket Interface Started</span>")
+  var icon = ''
+  var source = "websocket"
+  var string = "Bidirectional Websocket Interface Started Succesfully"
+  var printLogCls = "fg-green"
+  printLogModern(icon, source, string, printLogCls)
   setTimeout(function() {
     populatePortsMenu();
     populateDrivesMenu();
@@ -71,7 +106,11 @@ function initSocket() {
 
   socket.on('disconnect', function() {
     console.log("WEBSOCKET DISCONNECTED")
-    printLog("<span class='fg-red'>[ Websocket ] </span><span class='fg-brown'> Disconnected.  OpenBuilds CONTROL probably quit or crashed</span>")
+    var icon = ''
+    var source = "websocket"
+    var string = "Disconnected.  OpenBuilds CONTROL probably quit or crashed"
+    var printLogCls = "fg-red"
+    printLogModern(icon, source, string, printLogCls)
     $("#websocketstatus").html("Disconnected")
   });
 
@@ -80,7 +119,12 @@ function initSocket() {
   });
 
   socket.on('gcodeupload', function(data) {
-    printLog("Received new GCODE from API")
+    var icon = ''
+    var source = "api"
+    var string = "Received new GCODE from API"
+    var printLogCls = "fg-green"
+    printLogModern(icon, source, string, printLogCls)
+
     editor.session.setValue(data.gcode);
     loadedFileName = data.filename;
     setWindowTitle()
@@ -94,11 +138,19 @@ function initSocket() {
   });
 
   socket.on('gcodeupload', function(data) {
-    printLog("Activated window");
+    var icon = ''
+    var source = "api"
+    var string = "API called window into focus"
+    var printLogCls = "fg-green"
+    printLogModern(icon, source, string, printLogCls)
   });
 
   socket.on('integrationpopup', function(data) {
-    printLog("Integration called from " + data)
+    var icon = ''
+    var source = "api"
+    var string = "Integration called from " + data
+    var printLogCls = "fg-green"
+    printLogModern(icon, source, string, printLogCls)
     // editor.session.setValue(data);
     $('#controlTab').click()
     $('#consoletab').click()
@@ -107,8 +159,11 @@ function initSocket() {
 
   socket.on('updatedata', function(data) {
     // console.log(data.length, data)
-    var toPrint = data.response;
-    printLog("<span class='fg-red'>[ " + data.command + " ]</span>  <span class='fg-green'>" + toPrint + "</span>")
+    var icon = ''
+    var source = data.command
+    var string = data.response
+    var printLogCls = "fg-green"
+    printLogModern(icon, source, string, printLogCls)
   });
 
   socket.on('updateready', function(data) {
@@ -135,6 +190,15 @@ function initSocket() {
     // console.log(data)
     var toPrint = escapeHTML(data.response);
 
+    var lineColor = "fg-darkGray"
+    if (data.type == "error") {
+      lineColor = "fg-red"
+    } else if (data.type == "success") {
+      lineColor = "fg-green"
+    } else if (data.type == "info") {
+      lineColor = "fg-darkGray"
+    }
+
     // Parse Grbl Settings Feedback
     if (data.response.indexOf('$') === 0) {
       if (typeof grblSettings !== 'undefined') {
@@ -142,10 +206,18 @@ function initSocket() {
         var key = data.response.split('=')[0].substr(1);
         var descr = grblSettingCodes[key];
         toPrint = data.response + "  ;" + descr
-        printLog("<span class='fg-red'>[ " + data.command + " ]</span>  <span class='fg-green'>" + toPrint + "</span>")
+        var icon = ''
+        var source = data.command
+        var string = toPrint
+        var printLogCls = lineColor
+        printLogModern(icon, source, string, printLogCls)
       }
     } else {
-      printLog("<span class='fg-red'>[ " + data.command + " ]</span>  <span class='fg-green'>" + toPrint + "</span>")
+      var icon = ''
+      var source = data.command
+      var string = toPrint
+      var printLogCls = lineColor
+      printLogModern(icon, source, string, printLogCls)
     };
 
   });
@@ -160,14 +232,32 @@ function initSocket() {
 
   socket.on("jobComplete", function(data) {
 
-    // console.log("jobComplete", data)
+    console.log("jobComplete", data)
 
     if (data.completed) {
       // console.log("Job Complete", data)
     }
     if (data.jobCompletedMsg && data.jobCompletedMsg.length > 0) {
-      $("#completeMsgDiv").html(data.jobCompletedMsg);
+      if (data.jobStartTime) {
+        $("#completeMsgDiv").html("Job completed in " + msToTime(runTime) + "<hr>" + data.jobCompletedMsg);
+      } else {
+        $("#completeMsgDiv").html(data.jobCompletedMsg);
+      }
       Metro.dialog.open("#completeMsgModal");
+      var icon = ''
+      var source = "JOB COMPLETE"
+      var string = "Job completed in " + msToTime(runTime) + " / " + data.jobCompletedMsg
+      var printLogCls = "fg-green"
+      printLogModern(icon, source, string, printLogCls)
+    } else if (data.jobStartTime) {
+      var runTime = data.jobEndTime - data.jobStartTime;
+      $("#completeMsgDiv").html("Job completed in " + msToTime(runTime));
+      Metro.dialog.open("#completeMsgModal");
+      var icon = ''
+      var source = "JOB COMPLETE"
+      var string = "Job completed in " + msToTime(runTime)
+      var printLogCls = "fg-green"
+      printLogModern(icon, source, string, printLogCls)
     }
     $('#jobCompleteBtnOk').focus();
 
@@ -227,7 +317,11 @@ function initSocket() {
 
   socket.on('toastErrorAlarm', function(data) {
     console.log(data)
-    printLog("<span class='fg-red'>[ ALARM ]</span>  <span class='fg-red'>" + data + "</span>")
+    var icon = ''
+    var source = "ALARM"
+    var string = data
+    var printLogCls = "fg-red"
+    printLogModern(icon, source, string, printLogCls)
 
     var dialog = Metro.dialog.create({
       clsDialog: 'dark',
@@ -258,7 +352,12 @@ function initSocket() {
 
   socket.on('toastError', function(data) {
     console.log(data)
-    printLog("<span class='fg-red'>[ ERROR ]</span>  <span class='fg-red'>" + data + "</span>")
+
+    var icon = ''
+    var source = "ERROR"
+    var string = data
+    var printLogCls = "fg-red"
+    printLogModern(icon, source, string, printLogCls)
 
     var dialog = Metro.dialog.create({
       title: "<i class='fas fa-exclamation-triangle'></i> Grbl Error:",
@@ -314,9 +413,12 @@ function initSocket() {
       if (string.indexOf("fatal error occurred") != -1) {
         string = "<span class='fg-red'><i class='fas fa-times fa-fw fg-red fa-fw'></i>" + string + "</span>"
       }
-      printLog("<span class='fg-red'>[ Firmware Upgrade ] </span>" + string)
 
-      // $('#sendCommand').click();
+      var icon = ''
+      var source = " Firmware Upgrade"
+      //var string = string
+      var printLogCls = "fg-darkGray"
+      printLogModern(icon, source, string, printLogCls)
     }
   });
 
@@ -342,7 +444,11 @@ function initSocket() {
         if (!status.comms.interfaces.ports.length) {
           string += "[ No devices connected ]"
         }
-        printLog(string)
+        var icon = ''
+        var source = "usb ports"
+        //var string = string
+        var printLogCls = "fg-darkGray"
+        printLogModern(icon, source, string, printLogCls)
         laststatus.comms.interfaces.ports = status.comms.interfaces.ports;
         populatePortsMenu();
       }
@@ -354,7 +460,11 @@ function initSocket() {
             string += "[" + status.interface.diskdrives[i].mountpoints[0].path + "], "
           }
         }
-        printLog(string)
+        var icon = ''
+        var source = "usb drives"
+        //var string = string
+        var printLogCls = "fg-darkGray"
+        printLogModern(icon, source, string, printLogCls)
         laststatus.interface.diskdrives = status.interface.diskdrives;
         populateDrivesMenu();
       }
@@ -365,13 +475,24 @@ function initSocket() {
 
     if (!disableDROupdates) {
       if (unit == "mm") {
-        var xpos = status.machine.position.work.x + unit;
-        var ypos = status.machine.position.work.y + unit;
-        var zpos = status.machine.position.work.z + unit;
+        var xpos = status.machine.position.work.x.toFixed(2) + unit;
+        var ypos = status.machine.position.work.y.toFixed(2) + unit;
+        var zpos = status.machine.position.work.z.toFixed(2) + unit;
+
+        $(" #xPos ").attr('title', 'X Machine: ' + (status.machine.position.work.x + status.machine.position.offset.x).toFixed(2) + unit + "/ X Work: " + xpos);
+        $(" #yPos ").attr('title', 'Y Machine: ' + (status.machine.position.work.y + status.machine.position.offset.y).toFixed(2) + unit + "/ Y Work: " + ypos);
+        $(" #zPos ").attr('title', 'Z Machine: ' + (status.machine.position.work.z + status.machine.position.offset.z).toFixed(2) + unit + "/ Z Work: " + zpos);
+
       } else if (unit == "in") {
-        var xpos = (status.machine.position.work.x / 25.4).toFixed(2) + unit;
-        var ypos = (status.machine.position.work.y / 25.4).toFixed(2) + unit;
-        var zpos = (status.machine.position.work.z / 25.4).toFixed(2) + unit;
+        var xpos = (status.machine.position.work.x / 25.4).toFixed(3) + unit;
+        var ypos = (status.machine.position.work.y / 25.4).toFixed(3) + unit;
+        var zpos = (status.machine.position.work.z / 25.4).toFixed(3) + unit;
+
+        $(" #xPos ").attr('title', 'X Machine: ' + ((status.machine.position.work.x / 25.4) + (status.machine.position.offset.x / 25.4)).toFixed(3) + unit + "/ X Work: " + xpos);
+        $(" #yPos ").attr('title', 'Y Machine: ' + ((status.machine.position.work.y / 25.4) + (status.machine.position.offset.y / 25.4)).toFixed(3) + unit + "/ Y Work: " + ypos);
+        $(" #zPos ").attr('title', 'Z Machine: ' + ((status.machine.position.work.z / 25.4) + (status.machine.position.offset.z / 25.4)).toFixed(3) + unit + "/ Z Work: " + zpos);
+
+
       }
 
       if ($('#xPos').html() != xpos) {
@@ -383,6 +504,9 @@ function initSocket() {
       if ($('#zPos').html() != zpos) {
         $('#zPos').html(zpos);
       }
+
+
+
     } else {
       $('#xPos').html('disabled');
       $('#yPos').html('disabled');
@@ -608,6 +732,21 @@ function initSocket() {
     }
   })
 
+  socket.on("interfaceOutdated", function(status) {
+    console.log("interfaceOutdated", status)
+    populateGrblBuilderToolForm();
+    var select = $("#flashController").data("select").val("interface")
+    //status.interface.firmware.installedVersion
+    //status.interface.firmware.availVersion
+    var template = `We've detected that you are connected to an OpenBuilds Interface on port ` + status.comms.interfaces.activePort + `.<p>
+    It's firmware is currently out of date. You are running <code>v` + status.interface.firmware.installedVersion + `</code> and you can now update to <code>v` + status.interface.firmware.availVersion + `</code>.
+    Use the wizard below to update the firmware:
+    <hr>
+    `
+
+    $("#FlashDialogMsg").html(template);
+  })
+
   $('#sendCommand').on('click', function() {
     var commandValue = $('#command').val();
     sendGcode(commandValue);
@@ -813,4 +952,17 @@ function friendlyPort(i) {
 
 function escapeHTML(html) {
   return document.createElement('div').appendChild(document.createTextNode(html)).parentNode.innerHTML;
+}
+
+function msToTime(duration) {
+  var milliseconds = parseInt((duration % 1000) / 100),
+    seconds = Math.floor((duration / 1000) % 60),
+    minutes = Math.floor((duration / (1000 * 60)) % 60),
+    hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
+
+  hours = (hours < 10) ? "0" + hours : hours;
+  minutes = (minutes < 10) ? "0" + minutes : minutes;
+  seconds = (seconds < 10) ? "0" + seconds : seconds;
+
+  return hours + "h " + minutes + "m " + seconds + "." + milliseconds + "s";
 }

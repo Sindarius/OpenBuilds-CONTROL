@@ -19,8 +19,9 @@
 
 <body>
     <div class="pos-fixed pos-center" id="splash">
-        <img src="splashicon.png" style="display:block; margin:auto;">
-        <br>Starting&nbsp;OpenBuilds&nbsp;CONTROL...
+      <div id="splashAd" style="display:none"></div>
+      <br>
+      <center>Starting&nbsp;OpenBuilds&nbsp;CONTROL...</center>
     </div>
 
 
@@ -229,51 +230,54 @@
                 </button>
 
 
-                            <button id="chkSize" class="ribbon-button">
-                                <span class="icon">
-                                    <i class="far fa-square"></i>
-                                </span>
-                                <span class="caption">Check<br>Size</span>
-                            </button>
-                            <div>
-                                <button id="toolBtn" class="ribbon-button dropdown-toggle">
-                                    <span class="icon">
-                                        <span class="fa-layers fa-fw">
-                                            <i class="fas fa-bookmark" data-fa-transform="rotate-180"></i>
-                                            <i class="fas fa-screwdriver" data-fa-transform="rotate-135 down-3"></i>
-                                            <i class="fas fa-check fg-green" data-fa-transform="down-3"></i>
-                                        </span>
-                                    </span>
-                                    <span class="caption">Tool<br>On</span>
-                                </button>
-                                <ul class="ribbon-dropdown grblmode" data-role="dropdown" data-duration="100">
-                                    <li><a class="grblmode" href="#" onclick="sendGcode('M3 S1000')">Spindle On (M3
-                                            S1000)</a></li>
-                                    <!-- <li class="divider"></li> -->
-                                    <li>
-                                        <a href="#" class="dropdown-toggle">Laser On (M3 Sxxx)</a>
-                                        <ul class="ribbon-dropdown" data-role="dropdown">
-                                            <li onclick="sendGcode('M3 S50\n G1F1000')"><a href="#">Laser On 5% Power
-                                                    (M3 S50)</a></li>
-                                            <li onclick="sendGcode('M3 S100\n G1F1000')"><a href="#">Laser On 10% Power
-                                                    (M3 S100)</a></li>
-                                            <li onclick="sendGcode('M3 S250\n G1F1000')"><a href="#">Laser On 25% Power
-                                                    (M3 S250)</a></li>
-                                            <li onclick="sendGcode('M3 S500\n G1F1000')"><a href="#">Laser On 50% Power
-                                                    (M3 S500)</a></li>
-                                            <li onclick="sendGcode('M3 S750\n G1F1000')"><a href="#">Laser On 75% Power
-                                                    (M3 S750)</a></li>
-                                            <li onclick="sendGcode('M3 S1000\n G1F1000')"><a href="#">Laser On 100%
-                                                    Power (M3 S1000)</a></li>
-                                        </ul>
-                                    </li>
-                                    <!-- <li class="divider"></li> -->
-                                    <li><a class="grblmode" href="#" onclick="sendGcode('M3 S1000')">Plasma On (M3
-                                            S1000)</a></li>
-                                    <li class="divider fg-lightGray"></li>
-                                    <li id="menuMisting" style="display: none;"><a class="grblmode" href="#" onclick="sendGcode('M7')">Misting On (M7)</a></li>
-                                    <li><a class="grblmode" href="#" onclick="sendGcode('M8')">Coolant On (M8)</a></li>
-                                    <!-- <li><a class="grblmode" href="#" onclick="sendGcode('M9 S1000')">Coolant Off (M9)</a></li> -->
+                <button id="chkSize" class="ribbon-button">
+                  <span class="icon">
+                    <i class="far fa-square"></i>
+                  </span>
+                  <span class="caption">Check<br>Size</span>
+                </button>
+                <div>
+                  <button id="toolBtn" class="ribbon-button dropdown-toggle">
+                    <span class="icon">
+                      <span class="fa-layers fa-fw">
+                        <i class="fas fa-bookmark" data-fa-transform="rotate-180"></i>
+                        <i class="fas fa-screwdriver" data-fa-transform="rotate-135 down-3"></i>
+                        <i class="fas fa-check fg-green" data-fa-transform="down-3"></i>
+                      </span>
+                    </span>
+                    <span class="caption">Tool<br>On</span>
+                  </button>
+                  <ul class="ribbon-dropdown grblmode" data-role="dropdown" data-duration="100">
+                    <li><a class="grblmode" href="#" onclick="sendGcode('M3 S'+parseInt(grblParams.$30).toFixed(0))">Router On (M3 S<span class="ToolOnS100">1000</span>)</a></li>
+                    <li>
+                      <a href="#" class="dropdown-toggle">Variable Speed Spindle On (M3 Sxxx)</a>
+                      <ul class="ribbon-dropdown" data-role="dropdown">
+                        <li onclick="sendGcode('M3 S'+(parseInt(grblParams.$30) * 0.05).toFixed(0)+'\n G1F1000')"><a href="#">Spindle On 5% RPM (M3 S<span class="ToolOnS5">50</span>)</a></li>
+                        <li onclick="sendGcode('M3 S'+(parseInt(grblParams.$30) * 0.1).toFixed(0)+'\n G1F1000')"><a href="#">Spindle On 10% RPM (M3 S<span class="ToolOnS10">100</span>)</a></li>
+                        <li onclick="sendGcode('M3 S'+(parseInt(grblParams.$30) * 0.25).toFixed(0)+'\n G1F1000')"><a href="#">Spindle On 25% RPM (M3 S<span class="ToolOnS25">250</span>)</a></li>
+                        <li onclick="sendGcode('M3 S'+(parseInt(grblParams.$30) * 0.5).toFixed(0)+'\n G1F1000')"><a href="#">Spindle On 50% RPM (M3 S<span class="ToolOnS50">500</span>)</a></li>
+                        <li onclick="sendGcode('M3 S'+(parseInt(grblParams.$30) * 0.75).toFixed(0)+'\n G1F1000')"><a href="#">Spindle On 75% RPM (M3 S<span class="ToolOnS75">750</span>)</a></li>
+                        <li onclick="sendGcode('M3 S'+parseInt(grblParams.$30).toFixed(0)+'\n G1F1000')"><a href="#">Spindle On 100% RPM (M3 S<span class="ToolOnS100">1000</span>)</a></li>
+                      </ul>
+                    </li>
+                    <li>
+                      <a href="#" class="dropdown-toggle">Laser On (M3 Sxxx)</a>
+                      <ul class="ribbon-dropdown" data-role="dropdown">
+                        <li onclick="sendGcode('M3 S'+(parseInt(grblParams.$30) * 0.01).toFixed(0)+'\n G1F1000')"><a href="#">Laser On 1% Power (M3 S<span class="ToolOnS1">10</span>)</a></li>
+                        <li onclick="sendGcode('M3 S'+(parseInt(grblParams.$30) * 0.05).toFixed(0)+'\n G1F1000')"><a href="#">Laser On 5% Power (M3 S<span class="ToolOnS5">50</span>)</a></li>
+                        <li onclick="sendGcode('M3 S'+(parseInt(grblParams.$30) * 0.1).toFixed(0)+'\n G1F1000')"><a href="#">Laser On 10% Power (M3 S<span class="ToolOnS10">100</span>)</a></li>
+                        <li onclick="sendGcode('M3 S'+(parseInt(grblParams.$30) * 0.25).toFixed(0)+'\n G1F1000')"><a href="#">Laser On 25% Power (M3 S<span class="ToolOnS25">250</span>)</a></li>
+                        <li onclick="sendGcode('M3 S'+(parseInt(grblParams.$30) * 0.5).toFixed(0)+'\n G1F1000')"><a href="#">Laser On 50% Power (M3 S<span class="ToolOnS50">500</span>)</a></li>
+                        <li onclick="sendGcode('M3 S'+(parseInt(grblParams.$30) * 0.75).toFixed(0)+'\n G1F1000')"><a href="#">Laser On 75% Power (M3 S<span class="ToolOnS75">750</span>)</a></li>
+                        <li onclick="sendGcode('M3 S'+(parseInt(grblParams.$30) * 1).toFixed(0)+'\n G1F1000')"><a href="#">Laser On 100% Power (M3 S<span class="ToolOnS100">1000</span>)</a></li>
+                      </ul>
+                    </li>
+                    <!-- <li class="divider"></li> -->
+                    <li><a class="grblmode" href="#" onclick="sendGcode('M3 S'+parseInt(grblParams.$30).toFixed(0))">Plasma On (M3 S<span class="ToolOnS100">1000</span>)</a></li>
+                    <li class="divider fg-lightGray"></li>
+                    <li id="menuMisting" style="display: none;"><a class="grblmode" href="#" onclick="sendGcode('M7')">Misting On (M7)</a></li>
+                    <li><a class="grblmode" href="#" onclick="sendGcode('M8')">Coolant On (M8)</a></li>
+                    <!-- <li><a class="grblmode" href="#" onclick="sendGcode('M9 S1000')">Coolant Off (M9)</a></li> -->
 
                                 </ul>
                             </div>
@@ -853,7 +857,14 @@
                                     <tr>
                                         <td>
 
-                                        </td>
+                      <td>
+                        <button class="button light square large jogbtn yP jogcursorbtn" id="yP" data-role="ripple" data-ripple-color="#5de21b">
+                          <span class="fa-layers fa-fw">
+                            <i class="fas fa-arrow-up fg-green" data-fa-transform="shrink-2 down-8.5"></i>
+                            <span class="fa-layers-text fg-green" data-fa-transform="shrink-5 up-8" style="font-weight:600">Y+</span>
+                          </span>
+                        </button>
+                      </td>
 
                                         <td>
                                             <button class="button light square large jogbtn yP" id="yP" data-role="ripple" data-ripple-color="#5de21b">
@@ -870,59 +881,132 @@
                                         <td>
                                         </td>
 
+                      <td>
+                        <button class="button light square large jogbtn zP jogcursorbtn" id="zP" data-role="ripple" data-ripple-color="#1ba1e2">
+                          <span class="fa-layers fa-fw">
+                            <i class="fas fa-arrow-up fg-blue" data-fa-transform="shrink-2 down-8.5"></i>
+                            <span class="fa-layers-text fg-blue" data-fa-transform="shrink-5 up-8" style="font-weight:600">Z+</span>
+                          </span>
+                        </button>
+                      </td>
+                      <td class="servo-active" style="display: none;">
+                        <button class="button light square large jogbtn pP jogcursorbtn" id="pP" data-role="ripple" data-ripple-color="#1ba1e2">
+                          <span class="fa-layers fa-fw">
+                            <i class="fas fa-pen fg-darkBlue" data-fa-transform="shrink-2 down-8.5"></i>
+                            <i class="fas fa-ban fg-red" data-fa-transform="shrink-0.5 down-8.5"></i>
+                            <span class="fa-layers-text fg-darkBlue" data-fa-transform="shrink-10 up-12" style="font-weight:600">PEN</span>
+                            <span class="fa-layers-text fg-darkBlue" data-fa-transform="shrink-10 up-6" style="font-weight:600">UP</span>
+                          </span>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <button class="button light square large jogbtn xM jogcursorbtn" id="xM" data-role="ripple" data-ripple-color="#e21b1b">
+                          <span class="fa-layers fa-fw">
+                            <i class="fas fa-arrow-left fg-red" data-fa-transform="shrink-2 down-8.5"></i>
+                            <span class="fa-layers-text fg-red" data-fa-transform="shrink-5 up-8" style="font-weight:600">X-</span>
+                          </span>
+                        </button>
+                      </td>
 
-                                        <td>
-                                            <button class="button light square large jogbtn zP" id="zP" data-role="ripple" data-ripple-color="#1ba1e2">
-                                                <span class="fa-layers fa-fw">
-                                                    <i class="fas fa-arrow-up fg-blue"
-                                                        data-fa-transform="shrink-2 down-8.5"></i>
-                                                    <span class="fa-layers-text fg-blue"
-                                                        data-fa-transform="shrink-5 up-8"
-                                                        style="font-weight:600">Z+</span>
-                                                </span>
-                                            </button>
-                                        </td>
-                                        <td class="servo-active" style="display: none;">
-                                            <button class="button light square large jogbtn pP" id="pP" data-role="ripple" data-ripple-color="#1ba1e2">
-                                                <span class="fa-layers fa-fw">
-                                                    <i class="fas fa-pen fg-darkBlue"
-                                                        data-fa-transform="shrink-2 down-8.5"></i>
-                                                    <i class="fas fa-ban fg-red"
-                                                        data-fa-transform="shrink-0.5 down-8.5"></i>
-                                                    <span class="fa-layers-text fg-darkBlue"
-                                                        data-fa-transform="shrink-10 up-12"
-                                                        style="font-weight:600">PEN</span>
-                                                    <span class="fa-layers-text fg-darkBlue"
-                                                        data-fa-transform="shrink-10 up-6"
-                                                        style="font-weight:600">UP</span>
-                                                </span>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <button class="button light square large jogbtn xM" id="xM" data-role="ripple" data-ripple-color="#e21b1b">
-                                                <span class="fa-layers fa-fw">
-                                                    <i class="fas fa-arrow-left fg-red"
-                                                        data-fa-transform="shrink-2 down-8.5"></i>
-                                                    <span class="fa-layers-text fg-red"
-                                                        data-fa-transform="shrink-5 up-8"
-                                                        style="font-weight:600">X-</span>
-                                                </span>
-                                            </button>
-                                        </td>
+                      <td>
+                        <button class="button light square large jogbtn yM jogcursorbtn" id="yM" data-role="ripple" data-ripple-color="#5de21b">
+                          <span class="fa-layers fa-fw">
+                            <i class="fas fa-arrow-down fg-green" data-fa-transform="shrink-2 down-8.5"></i>
+                            <span class="fa-layers-text fg-green" data-fa-transform="shrink-5 up-8" style="font-weight:600">Y-</span>
+                          </span>
+                        </button>
+                      </td>
 
-                                        <td>
-                                            <button class="button light square large jogbtn yM" id="yM" data-role="ripple" data-ripple-color="#5de21b">
-                                                <span class="fa-layers fa-fw">
-                                                    <i class="fas fa-arrow-down fg-green"
-                                                        data-fa-transform="shrink-2 down-8.5"></i>
-                                                    <span class="fa-layers-text fg-green"
-                                                        data-fa-transform="shrink-5 up-8"
-                                                        style="font-weight:600">Y-</span>
-                                                </span>
-                                            </button>
-                                        </td>
+                      <td>
+                        <button class="button light square large jogbtn xP jogcursorbtn" id="xP" data-role="ripple" data-ripple-color="#e21b1b">
+                          <span class="fa-layers fa-fw">
+                            <i class="fas fa-arrow-right fg-red" data-fa-transform="shrink-2 down-8.5"></i>
+                            <span class="fa-layers-text fg-red" data-fa-transform="shrink-5 up-8" style="font-weight:600">X+</span>
+                          </span>
+                        </button>
+                      </td>
+                      <td>
+                        <button class="button light square large jogbtn zM jogcursorbtn" id="zM" data-role="ripple" data-ripple-color="#1ba1e2">
+                          <span class="fa-layers fa-fw">
+                            <i class="fas fa-arrow-down fg-blue" data-fa-transform="shrink-2 down-8.5"></i>
+                            <span class="fa-layers-text fg-blue" data-fa-transform="shrink-5 up-8" style="font-weight:600">Z-</span>
+                          </span>
+                        </button>
+                      </td>
+                      <td class="servo-active" style="display: none;">
+                        <button class="button light square large jogbtn pM jogcursorbtn" id="pM" data-role="ripple" data-ripple-color="#1ba1e2">
+                          <span class="fa-layers fa-fw">
+                            <i class="fas fa-pen fg-darkBlue" data-fa-transform="shrink-2 down-8.5"></i>
+                            <span class="fa-layers-text fg-darkBlue" data-fa-transform="shrink-10 up-12" style="font-weight:600">PEN</span>
+                            <span class="fa-layers-text fg-darkBlue" data-fa-transform="shrink-10 up-6" style="font-weight:600">DOWN</span>
+                          </span>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan='5'>
+                        <table style="width: 100%;">
+                          <tr>
+                            <td><span class="text-small">Incremental Jog</span>
+                            </td>
+                            <td class="pb-1">
+                              <label class="toggle">
+                                <input type="checkbox" id="jogTypeContinuous" />
+                                <div>app-notifition</div>
+                              </label>
+                            </td>
+                            <td><span class="text-small">Continuous Jog</span>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <button class="button light jogbtn metricbtn distbtn" id="dist01" style="width: 100%; height: 30px; line-height: 28px;">
+                          <span class=" fa-layers fa-fw">
+                            <span id="dist01label" class="fa-layers-text fg-gray jogdist" data-fa-transform="" style="font-weight:900; font-family: Arial; font-size: 12px;">0.1mm</span>
+                          </span>
+                        </button>
+                      </td>
+                      <td>
+                        <button class="button light jogbtn metricbtn distbtn" id="dist1" style="width: 100%; height: 30px; line-height: 28px;">
+                          <span class=" fa-layers fa-fw">
+                            <span id="dist1label" class="fa-layers-text fg-gray jogdist" data-fa-transform="" style="font-weight:900; font-family: Arial; font-size: 12px;">1mm</span>
+                          </span>
+                        </button>
+                      </td>
+                      <td>
+                        <button class="button light jogbtn distbtn metricbtn bd-openbuilds" id="dist10" style="width: 100%; height: 30px; line-height: 28px;">
+                          <span class=" fa-layers fa-fw">
+                            <span id="dist10label" class="fa-layers-text fg-openbuilds jogdist" data-fa-transform="" style="font-weight:900; font-family: Arial; font-size: 12px;">10mm</span>
+                          </span>
+                        </button>
+                      </td>
+                      <td>
+                        <button class="button light jogbtn distbtn metricbtn" id="dist100" style="width: 100%; height: 30px; line-height: 28px;">
+                          <span class=" fa-layers fa-fw">
+                            <span id="dist100label" class="fa-layers-text fg-gray jogdist" data-fa-transform="" style="font-weight:900; font-family: Arial; font-size: 12px;">100mm</span>
+                          </span>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan='5'>
+                        <div id="jogratemmdiv">
+                          <input id="jograte" type="number" min="100" max="10000" step="500" placeholder="5000" data-role="input" data-prepend="Jog:" data-append="mm/min" data-clear-button="false" value="5000" style="text-align: right;"
+                            data-editable="true" />
+                        </div>
+                        <div id="jograteinchdiv">
+                          <input id="jograteinch" type="number" min="1" max="5000" step="10" placeholder="196" data-role="input" data-prepend="Jog:" data-append="in/min" data-clear-button="false" value="196" style="text-align: right;"
+                            data-editable="true" />
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
 
                                         <td>
                                             <button class="button light square large jogbtn xP" id="xP" data-role="ripple" data-ripple-color="#e21b1b">
@@ -1461,6 +1545,9 @@
       <div class="dialog dark" data-role="dialog" id="grblFlashDialog" data-width="60%" data-actions-align="right" data-overlay-click-close="true">
         <div class="dialog-title"><i class="fas fa-microchip fa-fw"></i> Firmware Flashing Tool</div>
         <div class="dialog-content" style="height: calc(100% - 100px);">
+
+          <div id="FlashDialogMsg"></div>
+
           <p class="text-small mb-4">You can use this wizard to flash Firmware onto compatible controllers<br>Only use with care, or when instructed by Support</p>
 
           <div class="row">
@@ -1774,114 +1861,99 @@
 
                         <td style="padding: 4px; padding-left: 15px; vertical-align: top;">
 
-                            <div id="probe-auto" class="probe-tab-content" style="display: none;">
-                                <small>Automatic Probe Routine: This routine is used to find the XYZ origins, as well as
-                                    automatically
-                                    determine endmill diameter. </small>
-                                <hr>
-                                <small>Position the endmill above the hole in the probe plate as shown to the left just
-                                    above the plate, clip
-                                    on the magnetic connecting clip, then click the <span class="fg-cobalt">Confirm
-                                        Probe Position</span> button to continue...</small>
-                            </div>
-                            <div id="probe-xyz" class="probe-tab-content">
-                                <small>XYZ Probe Routine: This routine is used to find the XYZ origins</small>
-                                <hr>
-                                <small>Position the endmill above the hole in the probe plate as shown to the left just
-                                    above the plate, clip
-                                    on the magnetic connecting clip, then click the <span class="fg-cobalt">Confirm
-                                        Probe Position</span> button to continue...</small>
-                            </div>
-                            <div id="probe-x" class="probe-tab-content" style="display: none;">
-                                <small>X Probe Routine: This routine is used to find the X origin</small>
-                                <hr>
-                                <small>Position the endmill to the left of the probe plate as shown, clip on the
-                                    magnetic connecting clip,
-                                    then click the <span class="fg-cobalt">Confirm Probe Position</span> button to
-                                    continue...</small>
-                            </div>
-                            <div id="probe-y" class="probe-tab-content" style="display: none;">
-                                <small>Y Probe Routine: This routine is used to find the Y origin</small>
-                                <hr>
-                                <small>Position the endmill in front of the probe plate as shown, clip on the magnetic
-                                    connecting clip, then
-                                    click the <span class="fg-cobalt">Confirm Probe Position</span> button to
-                                    continue...</small>
-                            </div>
-                            <div id="probe-z" class="probe-tab-content" style="display: none;">
-                                <small>Z Probe Routine: This routine is used to find the Z origin</small>
-                                <hr>
-                                <small>Position the endmill above the probe plate as shown, clip on the magnetic
-                                    connecting clip, then click
-                                    the <span class="fg-cobalt">Confirm Probe Position</span> button to
-                                    continue...</small>
-                            </div>
-                            <div id="probe-endmill" class="probe-tab-content" style="display: none;">
-                                <small>Endmill Probe Routine: This routine is used to find the Endmill Diameter</small>
-                                <hr>
-                                <small>Position the endmill above the hole in the probe plate as shown to the left just
-                                    above the plate, clip
-                                    on the magnetic connecting clip, then click the <span class="fg-cobalt">Confirm
-                                        Probe Position</span> button to continue...</small>
-                                <hr>
-                                <small>
-                                    This operation will perform an XYZ probe to establish the plate position, then using
-                                    the hole in the plate,
-                                    it will measure and calculate the Endmill Diameter and display it onscreen. <br>This
-                                    operation will NOT set
-                                    any work-coordinates!
-                                </small>
-                            </div>
-                            <div id="probeJogWindow">
-                                <hr>
-                                <table>
-                                    <tr>
-                                        <td>
-                                            &nbsp;
-                                        </td>
-                                        <td>
-                                            <button class="button success small rounded outline m-1 yP" id="yPprobe" style="width: 40px;" data-role="ripple" data-ripple-color="#5de21b">Y+</button>
-                                        </td>
-                                        <td>
-                                            &nbsp;
-                                        </td>
-                                        <td>
-                                            <button class="button primary small rounded outline m-1 zP" id="zPprobe" style="width: 40px;" data-role="ripple" data-ripple-color="#1ba1e2">Z+</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <button class="button alert small rounded outline m-1 xM" id="xMprobe" style="width: 40px;" data-role="ripple" data-ripple-color="#e21b1b">X-</button>
-                                        </td>
-                                        <td>
-                                            <button class="button success small rounded outline m-1 yM" id="yMprobe" style="width: 40px;" data-role="ripple" data-ripple-color="#5de21b">Y-</button>
-                                        </td>
-                                        <td>
-                                            <button class="button alert small rounded outline m-1 xP" id="xPprobe" style="width: 40px;" data-role="ripple" data-ripple-color="#e21b1b">X+</button>
-                                        </td>
-                                        <td>
-                                            <button class="button primary small rounded outline m-1 zM" id="zMprobe" style="width: 40px;" data-role="ripple" data-ripple-color="#1ba1e2">Z-</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="4">
-                                            <center>
-                                                <span class="text-small">Or use the Keyboard to Jog</span>
-                                            </center>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-                            <hr>
-                            <div id="endmilldiameterform">
-                                <label>Endmill Diameter</label>
-                                <input id="probediameterxyz" type="number" value="6.35" data-role="input" data-append="mm" data-prepend="<img class='fa-fw' src='https://cam.openbuilds.com/images/endmilldia.svg' width='16px' height='16px'>" data-clear-button="false">
-                            </div>
-                            <hr>
-                            <button class="button" id="toggle-probe-advanced"><i class="fas fa-fw fa-cogs"></i>
-                                Advanced</button>
-                            <div class="pos-relative">
-                                <div data-role="collapse" data-toggle-element="#toggle-probe-advanced" data-collapsed="true" id="toggle-probe-advanced-content">
+                <div id="probe-auto" class="probe-tab-content" style="display: none;">
+                  <small>Automatic Probe Routine: This routine is used to find the XYZ origins, as well as automatically
+                    determine endmill diameter. </small>
+                  <hr>
+                  <small>Position the endmill above the hole in the probe plate as shown to the left just above the plate, clip
+                    on the magnetic connecting clip, then click the <span class="fg-grayBlue">Confirm Probe Position</span> button to continue...</small>
+                </div>
+                <div id="probe-xyz" class="probe-tab-content">
+                  <small>XYZ Probe Routine: This routine is used to find the XYZ origins</small>
+                  <hr>
+                  <small>Position the endmill above the hole in the probe plate as shown to the left just above the plate, clip
+                    on the magnetic connecting clip, then click the <span class="fg-grayBlue">Confirm Probe Position</span> button to continue...</small>
+                </div>
+                <div id="probe-x" class="probe-tab-content" style="display: none;">
+                  <small>X Probe Routine: This routine is used to find the X origin</small>
+                  <hr>
+                  <small>Position the endmill to the left of the probe plate as shown, clip on the magnetic connecting clip,
+                    then click the <span class="fg-grayBlue">Confirm Probe Position</span> button to continue...</small>
+                </div>
+                <div id="probe-y" class="probe-tab-content" style="display: none;">
+                  <small>Y Probe Routine: This routine is used to find the Y origin</small>
+                  <hr>
+                  <small>Position the endmill in front of the probe plate as shown, clip on the magnetic connecting clip, then
+                    click the <span class="fg-grayBlue">Confirm Probe Position</span> button to continue...</small>
+                </div>
+                <div id="probe-z" class="probe-tab-content" style="display: none;">
+                  <small>Z Probe Routine: This routine is used to find the Z origin</small>
+                  <hr>
+                  <small>Position the endmill above the probe plate as shown, clip on the magnetic connecting clip, then click
+                    the <span class="fg-grayBlue">Confirm Probe Position</span> button to continue...</small>
+                </div>
+                <div id="probe-endmill" class="probe-tab-content" style="display: none;">
+                  <small>Endmill Probe Routine: This routine is used to find the Endmill Diameter</small>
+                  <hr>
+                  <small>Position the endmill above the hole in the probe plate as shown to the left just above the plate, clip
+                    on the magnetic connecting clip, then click the <span class="fg-grayBlue">Confirm Probe Position</span> button to continue...</small>
+                  <hr>
+                  <small>
+                    This operation will perform an XYZ probe to establish the plate position, then using the hole in the plate,
+                    it will measure and calculate the Endmill Diameter and display it onscreen. <br>This operation will NOT set
+                    any work-coordinates!
+                  </small>
+                </div>
+                <div id="probeJogWindow">
+                  <hr>
+                  <table>
+                    <tr>
+                      <td>
+                        &nbsp;
+                      </td>
+                      <td>
+                        <button class="button success small rounded outline m-1 yP" id="yPprobe" style="width: 40px;" data-role="ripple" data-ripple-color="#5de21b">Y+</button>
+                      </td>
+                      <td>
+                        &nbsp;
+                      </td>
+                      <td>
+                        <button class="button primary small rounded outline m-1 zP" id="zPprobe" style="width: 40px;" data-role="ripple" data-ripple-color="#1ba1e2">Z+</button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <button class="button alert small rounded outline m-1 xM" id="xMprobe" style="width: 40px;" data-role="ripple" data-ripple-color="#e21b1b">X-</button>
+                      </td>
+                      <td>
+                        <button class="button success small rounded outline m-1 yM" id="yMprobe" style="width: 40px;" data-role="ripple" data-ripple-color="#5de21b">Y-</button>
+                      </td>
+                      <td>
+                        <button class="button alert small rounded outline m-1 xP" id="xPprobe" style="width: 40px;" data-role="ripple" data-ripple-color="#e21b1b">X+</button>
+                      </td>
+                      <td>
+                        <button class="button primary small rounded outline m-1 zM" id="zMprobe" style="width: 40px;" data-role="ripple" data-ripple-color="#1ba1e2">Z-</button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colspan="4">
+                        <center>
+                          <span class="text-small">Or use the Keyboard to Jog</span>
+                        </center>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+                <hr>
+                <div id="endmilldiameterform">
+                  <label>Endmill Diameter</label>
+                  <input id="probediameterxyz" type="number" value="6.35" data-role="input" data-append="mm" data-prepend="<img class='fa-fw' src='https://cam.openbuilds.com/images/endmilldia.svg' width='16px' height='16px'>"
+                    data-clear-button="false">
+                </div>
+                <hr>
+                <button class="button" id="toggle-probe-advanced"><i class="fas fa-fw fa-cogs"></i> Advanced</button>
+                <div class="pos-relative">
+                  <div data-role="collapse" data-toggle-element="#toggle-probe-advanced" data-collapsed="true" id="toggle-probe-advanced-content">
 
                                     <div id="zplatesettings" class="probe-tab-content">
                                         <label>Plate Thickness</label>
@@ -2023,20 +2095,20 @@
                     </div>
                     <!-- End XYZ Probe -->
 
-                    <!-- Edit Custom Probe -->
-                    <div class="dialog dark" data-role="dialog" id="editCustomProbeDialog" data-role="dialog" data-overlay-click-close="true">
-                        <div class="dialog-title"><i class="fas fa-cogs"></i> Edit Custom Probe</div>
-                        <div class="dialog-content">
-                            <input type="text" data-role="input" class="mb-1" data-prepend="X Offset" data-append="mm" id="customProbeXOffset">
-                            <input type="text" data-role="input" class="mb-1" data-prepend="Y Offset" data-append="mm" id="customProbeYOffset">
-                            <input type="text" data-role="input" class="mb-1" data-prepend="Z Offset" data-append="mm" id="customProbeZOffset">
-                        </div>
-                        <div class="dialog-actions">
-                            <button class="button js-dialog-close">Cancel</button>
-                            <button class="button primary js-dialog-close" onclick="saveEditCustomProbe();">Save</button>
-                        </div>
-                    </div>
-                    <!-- End Edit Custom Probe -->
+      <!-- Edit Custom Probe -->
+      <div class="dialog dark" data-role="dialog" id="editCustomProbeDialog" data-role="dialog" data-overlay-click-close="true">
+        <div class="dialog-title"><i class="fas fa-cogs"></i> Edit Custom Probe</div>
+        <div class="dialog-content">
+          <input type="text" data-role="input" class="mb-1" data-prepend="X Offset" data-append="mm" id="customProbeXOffset">
+          <input type="text" data-role="input" class="mb-1" data-prepend="Y Offset" data-append="mm" id="customProbeYOffset">
+          <input type="text" data-role="input" class="mb-1" data-prepend="Z Offset" data-append="mm" id="customProbeZOffset">
+        </div>
+        <div class="dialog-actions">
+          <button class="button js-dialog-close" onclick="resetJogModeAfterProbe()">Cancel</button>
+          <button class="button primary js-dialog-close" onclick="saveEditCustomProbe();">Save</button>
+        </div>
+      </div>
+      <!-- End Edit Custom Probe -->
 
                     <!-- job completion confirmation -->
                     <div class="dialog dark" id="completeMsgModal" data-role="dialog" data-overlay-click-close="true">

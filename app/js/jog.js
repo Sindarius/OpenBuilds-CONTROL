@@ -447,7 +447,8 @@ $(document).ready(function() {
     });
 
   $('.xM').on('touchstart mousedown', function(ev) {
-    if (ev.which != 1) {
+    console.log(ev)
+    if (ev.which > 1) {
       return
     }
     ev.preventDefault();
@@ -500,7 +501,7 @@ $(document).ready(function() {
 
   $('.xP').on('touchstart mousedown', function(ev) {
     // console.log("xp down")
-    if (ev.which != 1) {
+    if (ev.which > 1) {
       return
     }
     ev.preventDefault();
@@ -551,7 +552,7 @@ $(document).ready(function() {
   });
 
   $('.yM').on('touchstart mousedown', function(ev) {
-    if (ev.which != 1) {
+    if (ev.which > 1) { // Ignore middle and right click
       return
     }
     ev.preventDefault();
@@ -603,7 +604,7 @@ $(document).ready(function() {
   });
 
   $('.yP').on('touchstart mousedown', function(ev) {
-    if (ev.which != 1) {
+    if (ev.which > 1) { // Ignore middle and right click
       return
     }
     ev.preventDefault();
@@ -655,7 +656,7 @@ $(document).ready(function() {
   });
 
   $('.zM').on('touchstart mousedown', function(ev) {
-    if (ev.which != 1) {
+    if (ev.which > 1) { // Ignore middle and right click
       return
     }
     ev.preventDefault();
@@ -707,7 +708,7 @@ $(document).ready(function() {
   });
 
   $('.zP').on('touchstart mousedown', function(ev) {
-    if (ev.which != 1) {
+    if (ev.which > 1) { // Ignore middle and right click
       return
     }
     ev.preventDefault();
@@ -762,26 +763,30 @@ $(document).ready(function() {
         home();
     })
 
-    $('#chkSize').on('click', function() {
-        var bbox2 = new THREE.Box3().setFromObject(object);
-        console.log('bbox for Draw Bounding Box: ' + object + ' Min X: ', (bbox2.min.x), '  Max X:', (bbox2.max.x), 'Min Y: ', (bbox2.min.y), '  Max Y:', (bbox2.max.y));
-        var feedrate = $('#jograte').val();
-        if (laststatus.machine.firmware.type === 'grbl') {
-            var moves = `
-        $J=G90G21X` + (bbox2.min.x) + ` Y` + (bbox2.min.y) + ` F` + feedrate + `\n
-        $J=G90G21X` + (bbox2.max.x) + ` Y` + (bbox2.min.y) + ` F` + feedrate + `\n
-        $J=G90G21X` + (bbox2.max.x) + ` Y` + (bbox2.max.y) + ` F` + feedrate + `\n
-        $J=G90G21X` + (bbox2.min.x) + ` Y` + (bbox2.max.y) + ` F` + feedrate + `\n
-        $J=G90G21X` + (bbox2.min.x) + ` Y` + (bbox2.min.y) + ` F` + feedrate + `\n
+  $('#homeBtn').on('click', function(ev) {
+    home();
+  })
+
+  $('#chkSize').on('click', function() {
+    var bbox2 = new THREE.Box3().setFromObject(object);
+    console.log('bbox for Draw Bounding Box: ' + object + ' Min X: ', (bbox2.min.x), '  Max X:', (bbox2.max.x), 'Min Y: ', (bbox2.min.y), '  Max Y:', (bbox2.max.y));
+    var feedrate = $('#jograte').val();
+    if (laststatus.machine.firmware.type === 'grbl') {
+      var moves = `
+        $J=G90G21X` + (bbox2.min.x).toFixed(3) + ` Y` + (bbox2.min.y).toFixed(3) + ` F` + feedrate + `\n
+        $J=G90G21X` + (bbox2.max.x).toFixed(3) + ` Y` + (bbox2.min.y).toFixed(3) + ` F` + feedrate + `\n
+        $J=G90G21X` + (bbox2.max.x).toFixed(3) + ` Y` + (bbox2.max.y).toFixed(3) + ` F` + feedrate + `\n
+        $J=G90G21X` + (bbox2.min.x).toFixed(3) + ` Y` + (bbox2.max.y).toFixed(3) + ` F` + feedrate + `\n
+        $J=G90G21X` + (bbox2.min.x).toFixed(3) + ` Y` + (bbox2.min.y).toFixed(3) + ` F` + feedrate + `\n
         `;
         } else {
             var moves = `
        G90\n
-       G0 X` + (bbox2.min.x) + ` Y` + (bbox2.min.y) + ` F` + feedrate + `\n
-       G0 X` + (bbox2.max.x) + ` Y` + (bbox2.min.y) + ` F` + feedrate + `\n
-       G0 X` + (bbox2.max.x) + ` Y` + (bbox2.max.y) + ` F` + feedrate + `\n
-       G0 X` + (bbox2.min.x) + ` Y` + (bbox2.max.y) + ` F` + feedrate + `\n
-       G0 X` + (bbox2.min.x) + ` Y` + (bbox2.min.y) + ` F` + feedrate + `\n
+       G0 X` + (bbox2.min.x).toFixed(3) + ` Y` + (bbox2.min.y).toFixed(3) + ` F` + feedrate + `\n
+       G0 X` + (bbox2.max.x).toFixed(3) + ` Y` + (bbox2.min.y).toFixed(3) + ` F` + feedrate + `\n
+       G0 X` + (bbox2.max.x).toFixed(3) + ` Y` + (bbox2.max.y).toFixed(3) + ` F` + feedrate + `\n
+       G0 X` + (bbox2.min.x).toFixed(3) + ` Y` + (bbox2.max.y).toFixed(3) + ` F` + feedrate + `\n
+       G0 X` + (bbox2.min.x).toFixed(3) + ` Y` + (bbox2.min.y).toFixed(3) + ` F` + feedrate + `\n
        G90\n`;
         }
         socket.emit('runJob', {
@@ -939,13 +944,13 @@ function home() {
 }
 
 function toastJogWillHit(axis) {
-  printLog("<span class='fg-red'>[ jog ] </span><span class='fg-green'>Unable to jog toward " + axis + ", will hit soft-limit</span>")
+  printLog("<span class='fg-red'>[ jog ] </span><span class='fg-red'>Unable to jog toward " + axis + ", will hit soft-limit</span>")
   var toast = Metro.toast.create;
   toast("Unable to jog toward " + axis + ", will hit soft-limit", null, 1000, "bg-darkRed fg-white")
 }
 
 function toastJogNotIdle(axis) {
-  printLog("<span class='fg-red'>[ jog ] </span><span class='fg-green'>Please wait for machine to be Idle, before jogging</span>")
+  printLog("<span class='fg-red'>[ jog ] </span><span class='fg-red'>Please wait for machine to be Idle, before jogging</span>")
   var toast = Metro.toast.create;
   toast("Please wait for machine to be Idle, before jogging. Try again once it is Idle", null, 1000, "bg-darkRed fg-white")
 }
